@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+*.swp
 
 # debug
 npm-debug.log*
@@ -30,8 +32,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (BẮT BUỘC bỏ qua để bảo mật key AI/Database)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
 
 # vercel
 .vercel
@@ -39,3 +46,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Turbo (Quan trọng vì bạn đang dùng Turbopack)
+.turbo
+
+# Editor specific (Tránh đẩy cấu hình cá nhân lên Git)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Caches
+.eslintcache
+.stylelintcache
+
+# n8n (Nếu bạn chạy n8n local trong cùng thư mục)
+.n8n/
