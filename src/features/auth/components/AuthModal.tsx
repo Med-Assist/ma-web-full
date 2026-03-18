@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
   "use client";
 
   import { useState } from 'react';
@@ -24,6 +25,11 @@
 
     const isLogin = mode === 'login';
     const themeColor = isLogin ? 'blue' : 'cyan';
+
+    interface FirebaseError {
+      code?: string;
+      message?: string;
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); 
@@ -54,7 +60,9 @@
           alert("Tạo tài khoản thành công! Dữ liệu đã được lưu trữ an toàn.");
           onClose(); 
         }
-      } catch (error: any) {
+      } catch (err: unknown) {
+        const error = err as FirebaseError;
+
         console.error("Lỗi xác thực:", error);
         if (error.code === 'auth/email-already-in-use') {
           alert("Email này đã được sử dụng. Vui lòng thử đăng nhập.");
