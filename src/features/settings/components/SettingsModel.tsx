@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 
-// --- Custom Animated Components ---
+
 
 const AnimatedCheckbox = ({ checked, onChange, label }: { checked: boolean, onChange: () => void, label: string }) => {
   return (
@@ -97,7 +97,6 @@ const Card = ({ children, className = "" }: { children: React.ReactNode, classNa
   </div>
 );
 
-// --- Main Sections ---
 
 const Header = () => (
   <div className="flex justify-between items-center mb-8">
@@ -210,7 +209,7 @@ const AccountSecurity = () => {
       return;
     }
     
-    // Logic xử lý đổi mật khẩu ở đây
+    
     console.log("Đổi mật khẩu:", { oldPassword, newPassword });
     handleCloseModal();
   };
@@ -265,8 +264,6 @@ const AccountSecurity = () => {
           <AnimatedSwitch checked={twoFactor} onChange={setTwoFactor} />
         </div>
       </div>
-
-      {/* Password Change Modal */}
       <AnimatePresence>
         {isPasswordModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
@@ -626,7 +623,7 @@ export function SettingsModel() {
 
   const handleSaveAll = () => {
     setIsSaving(true);
-    // Giả lập gọi API lưu dữ liệu
+    
     setTimeout(() => {
       setIsSaving(false);
       alert("Đã lưu tất cả cài đặt thành công!");

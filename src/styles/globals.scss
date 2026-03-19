@@ -2,7 +2,7 @@
 @import "tailwindcss";
 @source "../features";
 @source "../shared";
-
+@import './patient-table.scss';
 html {
   scroll-behavior: smooth;
 }
