@@ -9,11 +9,15 @@ import {
 
 import { getAllUsers } from '../../shared/lib/generated-fdc';
 
+import { ServiceDetailsModel } from './components/ServiceDetailsModel';
+
 export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
   
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isServiceModelOpen, setIsServiceModelOpen] = useState(false);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -223,10 +227,17 @@ export default function DashboardPage() {
             </div>
             
             <div className="mt-8 flex justify-end">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg shadow-blue-600/20">
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg shadow-blue-600/20"
+                onClick={() => setIsServiceModelOpen(true)}>
                 Xem chi tiết
               </button>
             </div>
+
+            <ServiceDetailsModel 
+              isOpen={isServiceModelOpen} 
+              onClose={() => setIsServiceModelOpen(false)} 
+            />
           </div>
         </div>
 
