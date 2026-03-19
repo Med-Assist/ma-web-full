@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'; 
 import {
@@ -14,6 +14,19 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
+
+  const [sidebarAvatar, setSidebarAvatar] = useState('/doctor.png');
+  const [sidebarName, setSidebarName] = useState('BS. Danh Nguyễn');
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: any) => {
+      // Cho phép nhận giá trị rỗng khi người dùng gỡ ảnh
+      if (e.detail.avatar !== undefined) setSidebarAvatar(e.detail.avatar); 
+      if (e.detail.name !== undefined) setSidebarName(e.detail.name);
+    };
+    window.addEventListener('profileUpdate', handleProfileUpdate);
+    return () => window.removeEventListener('profileUpdate', handleProfileUpdate);
+  }, []);
 
   const navItems = [
     { icon: LayoutGrid, label: 'Trang chủ', path: '/dashboard' },
@@ -60,17 +73,41 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 mb-2">
-            <img
-              src="/doctor.png"
-              alt="Doctor"
-              className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm"
-            />
+          <Link 
+            href="/dashboard/profile"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 cursor-pointer transition-all block ${
+              pathname === '/dashboard/profile' 
+                ? 'bg-gradient-to-r from-[#35678E] to-[#8BB4DC] shadow-md shadow-[#35678E]/20' 
+                : 'bg-slate-50 hover:bg-slate-200'
+            }`}
+          >
+            {/* NẾU CÓ ẢNH THÌ HIỂN THỊ THẺ IMG, NẾU KHÔNG CÓ THÌ HIỂN THỊ CHỮ "BS" */}
+            {sidebarAvatar ? (
+              <img
+                src={sidebarAvatar}
+                alt="Doctor"
+                className={`h-10 w-10 flex-shrink-0 rounded-full object-cover border-2 shadow-sm ${
+                  pathname === '/dashboard/profile' ? 'border-white/40' : 'border-white'
+                }`}
+              />
+            ) : (
+              <div className={`h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center border-2 shadow-sm font-bold text-xs ${
+                pathname === '/dashboard/profile' ? 'border-white/40 bg-white/20 text-white' : 'border-white bg-slate-200 text-slate-500'
+              }`}>
+                BS
+              </div>
+            )}
+            
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-900 truncate">BS. Danh Nguyễn</p>
-              <p className="text-xs text-slate-500 truncate">Khoa Tim mạch</p>
+              <p className={`text-sm font-bold truncate ${
+                pathname === '/dashboard/profile' ? 'text-white' : 'text-slate-900'
+              }`}>
+                {sidebarName}
+              </p>
             </div>
-          </div>
+          </Link>
+          
+          {/* Nút đăng xuất giữ nguyên [cite: 112-116] */}
           <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-red-600 transition-colors">
             <LogOut className="h-5 w-5 text-slate-400" />
             Đăng xuất
