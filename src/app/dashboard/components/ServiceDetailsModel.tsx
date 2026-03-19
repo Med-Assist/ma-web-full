@@ -3,7 +3,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Printer, Calendar, User, Activity, FileText } from 'lucide-react';
 import { useState } from 'react';
-import { InvoiceModel } from './InvoiceModel'; // Đảm bảo đúng đường dẫn
+import { InvoiceModel } from './InvoiceModel'; 
 
 interface ServiceRecord {
   id: string;
@@ -14,7 +14,6 @@ interface ServiceRecord {
   diagnosis: string;
 }
 
-// Dữ liệu mẫu (Mock data) theo đúng yêu cầu của bạn
 const mockServices: ServiceRecord[] = [
   {
     id: '1',
@@ -46,7 +45,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          {/* Lớp nền mờ (Overlay) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -55,7 +53,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
           />
 
-          {/* Nội dung Popup */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -63,7 +60,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 Chi tiết dịch vụ bệnh nhân:
@@ -79,11 +75,9 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
               </button>
             </div>
 
-            {/* Body (Danh sách dịch vụ cuộn được) */}
             <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50/50">
               {mockServices.map((service) => (
                 <div key={service.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                  {/* Tên dịch vụ & Chuyên khoa */}
                   <div className="flex items-start gap-3 mb-4 border-b border-slate-100 pb-4">
                     <div className="p-2 bg-blue-50 text-[#35678E] rounded-lg">
                       <Activity size={24} />
@@ -94,7 +88,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
                     </div>
                   </div>
 
-                  {/* Thông tin chi tiết */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 mb-4">
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <User size={16} className="text-slate-400" />
@@ -106,7 +99,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
                     </div>
                   </div>
 
-                  {/* Chẩn đoán */}
                   <div className="bg-slate-50 rounded-lg p-3.5 border border-slate-100 flex items-start gap-2.5">
                     <FileText size={18} className="text-[#35678E] mt-0.5 flex-shrink-0" />
                     <div>
@@ -118,7 +110,6 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
               ))}
             </div>
 
-            {/* Footer (Các nút bấm) */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white">
               <button
                 onClick={onClose}
