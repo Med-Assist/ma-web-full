@@ -100,7 +100,7 @@ export function DoctorProfileModel() {
   const [isEditing, setIsEditing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
-  // Khai báo useRef để tham chiếu đến thẻ input file ẩn
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState({
@@ -117,7 +117,7 @@ export function DoctorProfileModel() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
-    // Nếu đổi tên, bắn sự kiện cập nhật tên sang Sidebar
+    
     if (name === 'name') {
       window.dispatchEvent(new CustomEvent('profileUpdate', { detail: { name: value } }));
     }
@@ -130,7 +130,7 @@ export function DoctorProfileModel() {
 
   const handleRemoveAvatar = () => {
     setProfile(prev => ({ ...prev, avatar: '' }));
-    // Bắn sự kiện xóa ảnh sang Sidebar
+    
     window.dispatchEvent(new CustomEvent('profileUpdate', { detail: { avatar: '' } }));
     showToast('Đã gỡ ảnh đại diện');
   };
@@ -148,7 +148,7 @@ export function DoctorProfileModel() {
       reader.onloadend = () => {
         const newAvatar = reader.result as string;
         setProfile(prev => ({ ...prev, avatar: newAvatar }));
-        // Bắn sự kiện cập nhật ảnh mới sang Sidebar
+        
         window.dispatchEvent(new CustomEvent('profileUpdate', { detail: { avatar: newAvatar } }));
         showToast('Đã tải lên ảnh đại diện mới');
       };
@@ -164,7 +164,6 @@ export function DoctorProfileModel() {
 
   return (
     <div className="font-sans text-slate-800 w-full max-w-7xl mx-auto">
-      {/* Input file ẩn dùng để chọn ảnh */}
       <input 
         type="file" 
         accept="image/*" 
@@ -173,7 +172,7 @@ export function DoctorProfileModel() {
         onChange={handleFileChange} 
       />
 
-      {/* Toast Notification */}
+      
       <AnimatePresence>
         {toastMessage && (
           <motion.div 
@@ -188,7 +187,6 @@ export function DoctorProfileModel() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Hồ sơ bác sĩ</h1>
@@ -204,18 +202,14 @@ export function DoctorProfileModel() {
         </motion.button>
       </header>
 
-      {/* Grid Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-10">
-        {/* Left Column (Profile & Certs) */}
         <div className="xl:col-span-2 space-y-8">
-          {/* Profile Card */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
           >
-            {/* Top section: Avatar, Name, Buttons */}
             <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -280,8 +274,6 @@ export function DoctorProfileModel() {
                 </motion.button>
               )}
             </div>
-
-            {/* Form Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8 mt-10">
               <FormField label="HỌ VÀ TÊN" name="name" value={profile.name} isEditing={isEditing} onChange={handleChange} onEdit={() => setIsEditing(true)} />
               <FormField label="NGÀY SINH" name="dob" value={profile.dob} isEditing={isEditing} onChange={handleChange} onEdit={() => setIsEditing(true)} />
@@ -295,7 +287,6 @@ export function DoctorProfileModel() {
             </div>
           </motion.div>
 
-          {/* Certifications Card */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -337,7 +328,7 @@ export function DoctorProfileModel() {
               </div>
               <div className="text-center sm:text-right w-full sm:w-auto mt-4 sm:mt-0">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Trạng thái</div>
-                {/* Đã thêm whitespace-nowrap và text-sm vào class bên dưới */}
+          
                     <div className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold text-sm whitespace-nowrap bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
                         <CheckCircle2 size={16} /> Xác minh
                     </div>
@@ -346,9 +337,7 @@ export function DoctorProfileModel() {
           </motion.div>
         </div>
 
-        {/* Right Column (Stats & Support) */}
         <div className="space-y-8">
-          {/* Stats Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -363,8 +352,6 @@ export function DoctorProfileModel() {
                 Tháng này <ChevronDown size={16} />
               </button>
             </div>
-
-            {/* Chart 1 */}
             <div className="mb-10">
               <h4 className="text-sm font-semibold text-slate-600 mb-4">Lượng khám/Tư vấn</h4>
               <div className="h-32">
@@ -390,8 +377,6 @@ export function DoctorProfileModel() {
                 </ResponsiveContainer>
               </div>
             </div>
-
-            {/* Chart 2 */}
             <div className="mb-10">
               <h4 className="text-sm font-semibold text-slate-600 mb-4">Tổng bệnh nhân điều trị</h4>
               <div className="h-32">
@@ -411,8 +396,6 @@ export function DoctorProfileModel() {
                 </ResponsiveContainer>
               </div>
             </div>
-
-            {/* Progress Bars */}
             <div>
               <h4 className="text-sm font-semibold text-slate-600 mb-5">Ca phẫu thuật/Thủ thuật</h4>
               <div className="space-y-5">
@@ -423,7 +406,6 @@ export function DoctorProfileModel() {
             </div>
           </motion.div>
 
-          {/* Support Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
