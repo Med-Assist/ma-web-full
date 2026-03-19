@@ -25,6 +25,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
+import { useRouter } from 'next/navigation';
 
 const chartData1 = [
   { name: 'T1', value: 30 },
@@ -95,6 +96,7 @@ const ProgressBar = ({ label, value, count }: { label: string; value: number; co
 );
 
 export function DoctorProfileModel() {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
@@ -193,6 +195,7 @@ export function DoctorProfileModel() {
           <p className="text-slate-500 mt-1">Quản lý thông tin cá nhân và chứng chỉ hành nghề</p>
         </div>
         <motion.button 
+          onClick={() => router.push('/dashboard/settings')} 
           whileHover={{ scale: 1.02 }} 
           whileTap={{ scale: 0.98 }} 
           className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium shadow-sm hover:bg-slate-50"
