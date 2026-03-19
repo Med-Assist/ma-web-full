@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; 
 import {
   LayoutGrid, FileText, Calendar, Eye, Pill,
-  MessageSquare, BarChart2, LogOut, Activity
+  MessageSquare, BarChart2, LogOut
 } from 'lucide-react';
+import { FloatingChat } from '@/features/chat/FloatingZaloContacts';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -20,7 +21,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     const handleProfileUpdate = (e: any) => {
-      // Cho phép nhận giá trị rỗng khi người dùng gỡ ảnh
       if (e.detail.avatar !== undefined) setSidebarAvatar(e.detail.avatar); 
       if (e.detail.name !== undefined) setSidebarName(e.detail.name);
     };
@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = [
     { icon: LayoutGrid, label: 'Trang chủ', path: '/dashboard' },
-    { icon: FileText, label: 'Bệnh án điện tử', path: '/records' },
+    { icon: FileText, label: 'Bệnh án điện tử', path: '/dashboard/patient' },
     { icon: Calendar, label: 'Ca trực & Lịch khám', path: '/schedule' },
     { icon: Eye, label: 'Chẩn đoán AI Võng mạc', path: '/ai-diagnosis' },
     { icon: Pill, label: 'Toa thuốc & Dược phẩm', path: '/pharmacy' },
@@ -61,8 +61,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-gradient-to-r from-[#35678E] to-[#8BB4DC] text-white shadow-md shadow-[#35678E]/20'
+                    
+                    : 'text-slate-500 hover:bg-blue-50/50 hover:text-[#35678E]'
                 }`}
               >
                 <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
@@ -78,46 +79,48 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 cursor-pointer transition-all block ${
               pathname === '/dashboard/profile' 
                 ? 'bg-gradient-to-r from-[#35678E] to-[#8BB4DC] shadow-md shadow-[#35678E]/20' 
-                : 'bg-slate-50 hover:bg-slate-200'
+                
+                : 'bg-transparent hover:bg-blue-50/50 group'
             }`}
           >
-            {/* NẾU CÓ ẢNH THÌ HIỂN THỊ THẺ IMG, NẾU KHÔNG CÓ THÌ HIỂN THỊ CHỮ "BS" */}
             {sidebarAvatar ? (
               <img
                 src={sidebarAvatar}
                 alt="Doctor"
-                className={`h-10 w-10 flex-shrink-0 rounded-full object-cover border-2 shadow-sm ${
-                  pathname === '/dashboard/profile' ? 'border-white/40' : 'border-white'
+                className={`h-10 w-10 flex-shrink-0 rounded-full object-cover border-2 shadow-sm transition-colors ${
+                  pathname === '/dashboard/profile' ? 'border-white/40' : 'border-slate-200 group-hover:border-[#8BB4DC]/50'
                 }`}
               />
             ) : (
-              <div className={`h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center border-2 shadow-sm font-bold text-xs ${
-                pathname === '/dashboard/profile' ? 'border-white/40 bg-white/20 text-white' : 'border-white bg-slate-200 text-slate-500'
+              <div className={`h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center border-2 shadow-sm font-bold text-xs transition-colors ${
+                pathname === '/dashboard/profile' ? 'border-white/40 bg-white/20 text-white' : 'border-slate-200 bg-slate-100 text-slate-500 group-hover:border-[#8BB4DC]/50'
               }`}>
                 BS
               </div>
             )}
             
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-bold truncate ${
-                pathname === '/dashboard/profile' ? 'text-white' : 'text-slate-900'
+              <p className={`text-sm font-bold truncate transition-colors ${
+                pathname === '/dashboard/profile' ? 'text-white' : 'text-slate-700 group-hover:text-[#35678E]'
               }`}>
                 {sidebarName}
               </p>
             </div>
           </Link>
           
-          {/* Nút đăng xuất giữ nguyên [cite: 112-116] */}
-          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-red-600 transition-colors">
+          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors">
             <LogOut className="h-5 w-5 text-slate-400" />
             Đăng xuất
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 ml-64 p-6 overflow-x-hidden">
+      <main className="flex-1 ml-64 p-6 overflow-x-hidden relative">
         {children}
       </main>
+      
+      <FloatingChat />
+      
     </div>
   );
 }
