@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Search, Filter, List, Grid, UserPlus, ChevronRight as ChevronRightIcon, Home } from 'lucide-react';
+import { Search, Filter, List, Grid, UserPlus, ChevronRight as ChevronRightIcon, FileText } from 'lucide-react';
 import { PatientGridCard, PatientData } from './components/PatientGridCard';
 
 
@@ -23,7 +23,7 @@ export const PatientFeature = () => {
     <div className="w-full">
       <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
         <div className="flex items-center gap-1.5 text-[#4285F4] font-medium cursor-pointer">
-          <Home className="h-4 w-4" />
+          <FileText className="h-4 w-4" />
           <span>Trang chủ</span>
         </div>
         <ChevronRightIcon className="h-4 w-4 text-slate-400" />

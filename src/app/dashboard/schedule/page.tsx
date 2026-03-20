@@ -55,7 +55,7 @@ export default function SchedulePage() {
 
   useEffect(() => {
     const names = ["Nguyễn An", "Trần Đức", "Phạm Mai", "Lê Hoàng", "Vũ Lan", "Đinh Tuấn", "Hoàng Yến", "Bùi Nam", "Ngô Thanh", "Đỗ Dũng"];
-    const statuses = ["Sẵn sàng", "Sẵn sàng", "Đang khám"]; // Weighted towards available
+    const statuses = ["Sẵn sàng", "Sẵn sàng", "Đang khám"]; 
     const generated = Array.from({ length: 3 }).map((_, i) => {
       const name = names[Math.floor(Math.random() * names.length)];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
@@ -262,27 +262,37 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quản lý Lịch trình & Ca trực</h1>
-          <p className="text-slate-500 text-sm mt-1">Sắp xếp nhân sự và điều phối cuộc hẹn thông minh</p>
+    <div className="w-full">
+      <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
+        <div className="flex items-center gap-1.5 text-[#4285F4] font-medium cursor-pointer hover:underline">
+          <Calendar className="h-4 w-4" /> 
+          <span>Trang chủ</span>
         </div>
+        <ChevronRight className="h-4 w-4 text-slate-400" />
+        <span className="font-bold text-slate-900">Ca trực và lịch khám</span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-1">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Ca trực và lịch khám</h1>
+          <p className="text-slate-500 text-sm mt-1">Quản lý khung giờ làm việc và điều phối cuộc hẹn chẩn đoán AI</p>
+        </div>
+        
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all shadow-sm">
             <Download size={16} /> Xuất báo cáo
           </button>
-          <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#638BB5] text-white rounded-xl text-sm font-semibold hover:bg-[#527a9f] transition-colors shadow-sm">
+          <button 
+            onClick={() => setIsCreateModalOpen(true)} 
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#638BB5] text-white rounded-xl text-sm font-semibold hover:bg-[#527a9f] transition-all shadow-md hover:shadow-lg active:scale-95"
+          >
             <Plus size={16} /> Tạo lịch mới
           </button>
         </div>
       </div>
+    </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Calendar Section (col-span-2) */}
         <div className="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col">
-          {/* Calendar Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
               <h2 className="text-lg font-bold text-slate-900">{currentMonthStr}</h2>
@@ -314,10 +324,8 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          {/* Calendar Grid */}
           {view === 'Tuần' && (
             <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col">
-              {/* Days Header */}
               <div className="flex border-b border-slate-100 bg-slate-50/50 pr-1 sm:pr-2 md:pr-3">
                 <div className="w-16 shrink-0 p-3 border-r border-slate-100"></div>
                 <div className="flex-1 grid grid-cols-7">
@@ -331,9 +339,7 @@ export default function SchedulePage() {
                   ))}
                 </div>
               </div>
-              {/* Time Grid */}
               <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex">
-                {/* Time column */}
                 <div className="w-16 shrink-0 border-r border-slate-100 flex flex-col bg-white">
                   {Array.from({length: 10}).map((_, i) => (
                     <div key={i} className="h-20 border-b border-slate-100 p-2 text-xs font-medium text-slate-400 text-right">
@@ -341,7 +347,6 @@ export default function SchedulePage() {
                     </div>
                   ))}
                 </div>
-                {/* Day columns */}
                 <div className="flex-1 grid grid-cols-7 bg-white relative">
                   {Array.from({length: 7}).map((_, col) => (
                     <div key={col} className={`flex flex-col ${col < 6 ? 'border-r border-slate-100' : ''} relative`}>
@@ -349,7 +354,6 @@ export default function SchedulePage() {
                         <div key={row} className="h-20 border-b border-slate-100/50"></div>
                       ))}
                       
-                      {/* Events - hardcoded for design match */}
                       {col === 1 && !deletedEvents.includes('week-1') && (
                         <div 
                           onClick={() => handleEventClick({
@@ -443,7 +447,6 @@ export default function SchedulePage() {
                         </div>
                       )}
 
-                      {/* Custom Events */}
                       {customEvents.filter(e => 
                         e.date.getDate() === weekDays[col].fullDate.getDate() && 
                         e.date.getMonth() === weekDays[col].fullDate.getMonth() && 
@@ -473,16 +476,13 @@ export default function SchedulePage() {
 
           {view === 'Ngày' && (
             <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col">
-              {/* Day Header */}
               <div className="border-b border-slate-100 bg-slate-50/50 flex pr-1 sm:pr-2 md:pr-3">
                 <div className="w-16 p-3 text-center text-xs font-medium text-slate-400 border-r border-slate-100 shrink-0"></div>
                 <div className="flex-1 p-3 text-center text-sm font-bold text-blue-600">
                   {dayString}
                 </div>
               </div>
-              {/* Time Grid */}
               <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex">
-                {/* Time column */}
                 <div className="w-16 border-r border-slate-100 flex flex-col bg-white shrink-0">
                   {Array.from({length: 10}).map((_, i) => (
                     <div key={i} className="h-32 border-b border-slate-100 p-2 text-xs font-medium text-slate-400 text-right">
@@ -490,13 +490,11 @@ export default function SchedulePage() {
                     </div>
                   ))}
                 </div>
-                {/* Events column */}
                 <div className="flex-1 relative flex flex-col bg-white">
                   {Array.from({length: 10}).map((_, row) => (
                     <div key={row} className="h-32 border-b border-slate-100/50"></div>
                   ))}
                   
-                  {/* Events for Day View */}
                   {!deletedEvents.includes('day-1') && (
                     <div 
                       onClick={() => handleEventClick({
@@ -567,8 +565,6 @@ export default function SchedulePage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Custom Events */}
                   {customEvents.filter(e => 
                     e.date.getDate() === baseDay.getDate() && 
                     e.date.getMonth() === baseDay.getMonth() && 
@@ -604,7 +600,6 @@ export default function SchedulePage() {
 
           {view === 'Tháng' && (
             <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col bg-white min-h-[600px]">
-              {/* Days Header */}
               <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
                 {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day, i) => (
                   <div key={i} className={`p-3 text-center text-xs font-bold text-slate-500 ${i < 6 ? 'border-r border-slate-100' : ''}`}>
@@ -612,10 +607,8 @@ export default function SchedulePage() {
                   </div>
                 ))}
               </div>
-              {/* Calendar Grid */}
               <div className="flex-1 grid grid-cols-7 grid-rows-6">
                 {monthDays.map((day, i) => {
-                  // Find events for this day
                   const allMonthEvents = [...monthEvents, ...customEvents];
                   const dayEvents = allMonthEvents.filter(e => 
                     e.date.getDate() === day.fullDate.getDate() && 
@@ -669,9 +662,7 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        {/* Right Sidebar (col-span-1) */}
         <div className="space-y-6">
-          {/* Quản lý ca trực */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-slate-900">Quản lý ca trực</h2>
@@ -736,7 +727,6 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          {/* Bác sĩ đang sẵn sàng */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
             <h2 className="text-lg font-bold text-slate-900 mb-6">Bác sĩ đang sẵn sàng</h2>
             
@@ -766,7 +756,6 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* Event Details Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
           <motion.div 
@@ -887,7 +876,6 @@ export default function SchedulePage() {
         )}
       </AnimatePresence>
 
-      {/* Event Details Modal */}
       <AnimatePresence>
         {selectedEvent && (
           <motion.div 
@@ -906,7 +894,6 @@ export default function SchedulePage() {
               className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
               <h3 className="text-lg font-bold text-slate-900">Chi tiết ca trực</h3>
               <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors">
@@ -914,9 +901,7 @@ export default function SchedulePage() {
               </button>
             </div>
             
-            {/* Body */}
             <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-              {/* Patient Info */}
               <div>
                 <div className="flex items-center gap-2 text-orange-500 mb-4">
                   <User size={16} className="stroke-[2.5px]" />
@@ -937,8 +922,6 @@ export default function SchedulePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Time */}
               <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-4 border border-slate-100">
                 <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 shrink-0">
                   <Clock size={20} className="stroke-[2.5px]" />
@@ -949,7 +932,6 @@ export default function SchedulePage() {
                 </div>
               </div>
 
-              {/* Attachments */}
               {selectedEvent.attachments && selectedEvent.attachments.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 text-orange-500 mb-4">
@@ -977,8 +959,6 @@ export default function SchedulePage() {
                 </div>
               )}
             </div>
-
-            {/* Footer */}
             <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
               <button onClick={closeModal} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors">
                 Đóng
@@ -994,8 +974,6 @@ export default function SchedulePage() {
         </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div

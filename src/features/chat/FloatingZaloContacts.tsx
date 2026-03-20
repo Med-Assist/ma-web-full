@@ -137,8 +137,13 @@ export const FloatingChat = () => {
 
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-gradient-to-r from-[#35678E] to-[#8BB4DC] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#35678E]/30 transition-transform hover:scale-105 hover:opacity-90 relative"
+        className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-[#8bb4dc] text-white shadow-[0_18px_34px_rgba(113,159,205,0.4)] transition-transform hover:scale-105 hover:bg-[#7ca8d3]"
       >
+        {!isOpen ? (
+          <div className="absolute -right-1 top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#ef4444] text-[11px] font-bold text-white">
+            2
+          </div>
+        ) : null}
         {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
 
