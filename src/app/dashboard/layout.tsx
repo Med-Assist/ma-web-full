@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { icon: LayoutGrid, label: 'Trang chủ', path: '/dashboard' },
     { icon: FileText, label: 'Bệnh án điện tử', path: '/dashboard/patient' },
-    { icon: Calendar, label: 'Ca trực & Lịch khám', path: '/schedule' },
+    { icon: Calendar, label: 'Ca trực & Lịch khám', path: '/dashboard/schedule' },
     { icon: Eye, label: 'Chẩn đoán AI Võng mạc', path: '/ai-diagnosis' },
     { icon: Pill, label: 'Toa thuốc & Dược phẩm', path: '/pharmacy' },
     { icon: MessageSquare, label: 'Tư vấn trực tuyến', path: '/consultation' },
