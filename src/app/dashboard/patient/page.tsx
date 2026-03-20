@@ -7,10 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function PatientPage() {
-  return (
-    
-    <main className="min-h-screen bg-[#F4F7F9] p-6">
-      <PatientFeature />
-    </main>
-  );
+  return <PatientFeature />;
 }

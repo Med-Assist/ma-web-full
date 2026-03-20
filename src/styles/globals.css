@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@source "../features";
+@source "../shared";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0b1121;
+  overflow-x: hidden;
+}
+
+.custom-light-table .ant-table-thead > tr > th {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.custom-light-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.custom-light-table .ant-table-tbody > tr:hover > td {
+  background-color: #f8fafc !important;
+}

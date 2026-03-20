@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Search, Bell, Plus, Eye, Calendar,
   MoreVertical, Paperclip, Send, Activity,
@@ -11,10 +12,17 @@ import { getAllUsers } from '../../shared/lib/generated-fdc';
 
 import { ServiceDetailsModel } from './components/ServiceDetailsModel';
 
+type DashboardPatient = {
+  uid: string;
+  displayName?: string | null;
+  email?: string | null;
+  role?: string | null;
+};
+
 export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
   
-  const [patients, setPatients] = useState<any[]>([]);
+  const [patients, setPatients] = useState<DashboardPatient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isServiceModelOpen, setIsServiceModelOpen] = useState(false);
@@ -195,9 +203,12 @@ export default function DashboardPage() {
                 <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center h-full min-h-[100px]">
                   <FileText className="h-6 w-6 text-slate-400 mb-2" />
                   <p className="text-xs text-slate-500 mb-3">Chưa có dữ liệu từ các cơ sở khác.</p>
-                  <button className="text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full transition-colors">
+                  <Link
+                    href="/dashboard/record-digitization"
+                    className="text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full transition-colors"
+                  >
                     + Số hóa hồ sơ
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
