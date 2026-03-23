@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Download, 
@@ -23,126 +23,487 @@ import {
   CheckCircle2,
   Trash2
 } from 'lucide-react';
+import {
+  createShiftSwapRequest,
+  getScheduleWorkspace,
+  getSettingsWorkspace,
+  upsertScheduleEvent,
+  type GetScheduleWorkspaceData,
+  type GetSettingsWorkspaceData,
+  type UpsertScheduleEventVariables,
+} from "@/shared/lib/generated-fdc";
+import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
+import { createClientId, getActiveDoctorUid, nowIsoString, toIsoDateString } from "@/shared/lib/medassist-runtime";
+
+const HIDDEN_MOCK_EVENT_IDS = [
+  "week-1",
+  "week-2",
+  "week-3",
+  "week-4",
+  "week-5",
+  "day-1",
+  "day-2",
+  "month-1",
+  "month-2",
+  "month-3",
+  "month-4",
+  "month-5",
+  "month-6",
+  "month-7",
+  "month-8",
+  "month-9",
+];
+
+const DEFAULT_SHIFT_LABELS = {
+  morning: "08:00 - 12:00",
+  afternoon: "13:00 - 17:00",
+  night: "20:00 - 06:00",
+} as const;
+
+type ScheduleEventRow = GetScheduleWorkspaceData["scheduleEvents"][number];
+type ScheduleAttachmentRow = GetScheduleWorkspaceData["scheduleAttachments"][number];
+type DoctorAvailabilityRow = GetScheduleWorkspaceData["doctorAvailabilities"][number];
+type PatientProfileRow = GetScheduleWorkspaceData["patientProfiles"][number];
+type WorkingScheduleSlotRow = GetSettingsWorkspaceData["workingScheduleSlots"][number];
+type ShiftKey = "morning" | "afternoon" | "night";
+type CalendarEvent = {
+  id: string;
+  title: string;
+  type: "green" | "blue" | "orange" | "purple" | "red";
+  date: Date;
+  time: string;
+  startTime: string;
+  endTime: string;
+  timeString: string;
+  patientName: string;
+  patientId: string;
+  insuranceId: string;
+  attachments: { name: string; type: string; url?: string | null }[];
+};
+type AvailableDoctor = {
+  id: string;
+  name: string;
+  specialty: string;
+  doctorUid: string;
+  department: string;
+  shiftKey: string;
+  isAvailable: boolean;
+  avatarSeed: number;
+  avatarUrl?: string | null;
+};
 
 export default function SchedulePage() {
   const [view, setView] = useState<'Ngày' | 'Tuần' | 'Tháng'>('Ngày');
   const [offset, setOffset] = useState(0);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [completedEvents, setCompletedEvents] = useState<string[]>([]);
-  const [deletedEvents, setDeletedEvents] = useState<string[]>([]);
+  const [deletedEvents, setDeletedEvents] = useState<string[]>(HIDDEN_MOCK_EVENT_IDS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [customEvents, setCustomEvents] = useState<any[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEventRow[]>([]);
+  const [scheduleAttachments, setScheduleAttachments] = useState<ScheduleAttachmentRow[]>([]);
+  const [doctorAvailabilities, setDoctorAvailabilities] = useState<DoctorAvailabilityRow[]>([]);
+  const [patientProfiles, setPatientProfiles] = useState<PatientProfileRow[]>([]);
+  const [workingScheduleSlots, setWorkingScheduleSlots] = useState<WorkingScheduleSlotRow[]>([]);
   const [newForm, setNewForm] = useState({
     patientId: '',
     patientName: '',
     insuranceId: '',
-    date: '2023-10-12',
+    date: toIsoDateString(),
     startTime: '08:00',
     endTime: '09:00'
   });
 
-  const [selectedDepartment, setSelectedDepartment] = useState('Phòng Flem 407');
-  const [selectedShift, setSelectedShift] = useState('morning');
-  const [availableDoctors, setAvailableDoctors] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('Phòng Khám 1');
+  const [selectedShift, setSelectedShift] = useState<ShiftKey>('morning');
+  const [availableDoctors, setAvailableDoctors] = useState<AvailableDoctor[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleSwapShift = (doctorName: string) => {
-    setToastMessage(`Đã gửi yêu cầu đổi ca đến ${doctorName}.`);
-    setTimeout(() => setToastMessage(null), 3000);
+  const doctorUid = getActiveDoctorUid();
+  const scheduleAttachmentsByEventId = useMemo(() => {
+    const map = new Map<string, { name: string; type: string; url?: string | null }[]>();
+    scheduleAttachments.forEach((item) => {
+      const list = map.get(item.eventId) || [];
+      list.push({
+        name: item.fileName,
+        type: item.fileType,
+        url: item.fileUrl || null,
+      });
+      map.set(item.eventId, list);
+    });
+    return map;
+  }, [scheduleAttachments]);
+
+  const patientByUid = useMemo(() => {
+    return new Map(patientProfiles.map((profile) => [profile.userUid, profile]));
+  }, [patientProfiles]);
+
+  const customEvents = useMemo<CalendarEvent[]>(() => {
+    return scheduleEvents
+      .filter((event) => !event.isDeleted)
+      .map((event) => {
+        const date = new Date(`${event.scheduledDate}T00:00:00`);
+        const startTime = event.startTime.slice(0, 5);
+        const endTime = event.endTime.slice(0, 5);
+        const tone = (event.colorTone || "blue").toLowerCase();
+        const type: CalendarEvent["type"] =
+          tone.includes("green")
+            ? "green"
+            : tone.includes("orange")
+              ? "orange"
+              : tone.includes("purple")
+                ? "purple"
+                : tone.includes("red")
+                  ? "red"
+                  : "blue";
+        const patientProfile = event.patientUid ? patientByUid.get(event.patientUid) : null;
+        return {
+          id: event.id,
+          title: event.title,
+          type,
+          date: Number.isNaN(date.getTime()) ? new Date() : date,
+          time: startTime,
+          startTime,
+          endTime,
+          timeString: event.timeString || `Ngày ${event.scheduledDate}, ${startTime} - ${endTime}`,
+          patientName: event.patient?.displayName || event.patientNameOverride || "Bệnh nhân chưa xác định",
+          patientId: event.patient?.userCode || event.patientUid || "N/A",
+          insuranceId: event.insuranceNumber || patientProfile?.insuranceNumber || "",
+          attachments: scheduleAttachmentsByEventId.get(event.id) || [],
+        };
+      });
+  }, [patientByUid, scheduleAttachmentsByEventId, scheduleEvents]);
+
+  const patientOptions = useMemo(() => {
+    const combined = new Map<string, { patientId: string; patientName: string; insuranceId: string }>();
+    patientProfiles.forEach((patientProfile) => {
+      const patientId = (patientProfile.user.userCode || patientProfile.userUid || '').trim();
+      if (!patientId) return;
+      const key = patientId.toLowerCase();
+      if (!combined.has(key)) {
+        combined.set(key, {
+          patientId,
+          patientName: patientProfile.user.displayName || '',
+          insuranceId: patientProfile.insuranceNumber || '',
+        });
+      }
+    });
+
+    customEvents.forEach((event) => {
+      const patientId = (event.patientId || "").trim();
+      if (!patientId || patientId === "N/A") return;
+      const key = patientId.toLowerCase();
+      if (!combined.has(key)) {
+        combined.set(key, {
+          patientId,
+          patientName: event.patientName || "",
+          insuranceId: event.insuranceId || "",
+        });
+      }
+    });
+
+    return Array.from(combined.values());
+  }, [customEvents, patientProfiles]);
+
+  const departmentOptions = useMemo(() => {
+    const values = Array.from(new Set(doctorAvailabilities.map((item) => item.department).filter(Boolean)));
+    return values.length > 0 ? values : ["Phòng Khám 1", "Phòng Cấp Cứu", "Khoa Nhi", "Nội tiết"];
+  }, [doctorAvailabilities]);
+
+  const shiftTimeLabels = useMemo(() => {
+    const activeHours = workingScheduleSlots.filter((slot) => slot.isActive).map((slot) => slot.hour);
+    const formatRange = (hours: number[], fallback: string) => {
+      if (hours.length === 0) {
+        return fallback;
+      }
+      const start = Math.min(...hours);
+      const end = Math.max(...hours) + 1;
+      return `${String(start).padStart(2, "0")}:00 - ${String(end % 24).padStart(2, "0")}:00`;
+    };
+    const morning = activeHours.filter((hour) => hour < 12);
+    const afternoon = activeHours.filter((hour) => hour >= 12 && hour < 18);
+    const night = activeHours.filter((hour) => hour >= 18);
+    return {
+      morning: formatRange(morning, DEFAULT_SHIFT_LABELS.morning),
+      afternoon: formatRange(afternoon, DEFAULT_SHIFT_LABELS.afternoon),
+      night: formatRange(night, DEFAULT_SHIFT_LABELS.night),
+    };
+  }, [workingScheduleSlots]);
+
+  const toUpsertInput = (event: ScheduleEventRow): UpsertScheduleEventVariables => ({
+    id: event.id,
+    doctorUid: event.doctorUid,
+    patientUid: event.patientUid || null,
+    title: event.title,
+    eventType: event.eventType,
+    department: event.department || null,
+    scheduledDate: event.scheduledDate,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    status: event.status,
+    colorTone: event.colorTone || null,
+    roomName: event.roomName || null,
+    insuranceNumber: event.insuranceNumber || null,
+    patientNameOverride: event.patientNameOverride || null,
+    timeString: event.timeString || null,
+    priority: event.priority || null,
+    meetingLink: event.meetingLink || null,
+    notes: event.notes || null,
+    attachmentsCount: event.attachmentsCount,
+    displayOrder: event.displayOrder,
+    isCompleted: event.isCompleted,
+    isDeleted: event.isDeleted,
+  });
+
+  const applyWorkspace = (
+    scheduleData: GetScheduleWorkspaceData,
+    settingsData?: GetSettingsWorkspaceData,
+  ) => {
+    setScheduleEvents(scheduleData.scheduleEvents);
+    setScheduleAttachments(scheduleData.scheduleAttachments);
+    setDoctorAvailabilities(scheduleData.doctorAvailabilities);
+    setPatientProfiles(scheduleData.patientProfiles);
+    setCompletedEvents(scheduleData.scheduleEvents.filter((item) => item.isCompleted).map((item) => item.id));
+    setDeletedEvents((current) => {
+      const dbDeleted = scheduleData.scheduleEvents.filter((item) => item.isDeleted).map((item) => item.id);
+      return Array.from(new Set([...current, ...dbDeleted]));
+    });
+    if (settingsData) {
+      setWorkingScheduleSlots(settingsData.workingScheduleSlots);
+    }
+    if (scheduleData.doctorAvailabilities.length > 0) {
+      setSelectedDepartment((current) => {
+        if (scheduleData.doctorAvailabilities.some((item) => item.department === current)) {
+          return current;
+        }
+        return scheduleData.doctorAvailabilities[0].department;
+      });
+    }
   };
 
   useEffect(() => {
-    const names = ["Nguyễn An", "Trần Đức", "Phạm Mai", "Lê Hoàng", "Vũ Lan", "Đinh Tuấn", "Hoàng Yến", "Bùi Nam", "Ngô Thanh", "Đỗ Dũng"];
-    const statuses = ["Sẵn sàng", "Sẵn sàng", "Đang khám"]; // Weighted towards available
-    const generated = Array.from({ length: 3 }).map((_, i) => {
-      const name = names[Math.floor(Math.random() * names.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const isAvailable = status === "Sẵn sàng";
-      return {
-        id: i,
-        name: `BS. ${name}`,
-        specialty: isAvailable ? selectedDepartment : "Đang khám",
-        isAvailable,
-        avatarSeed: Math.floor(Math.random() * 1000)
-      };
-    });
-    setAvailableDoctors(generated);
-  }, [selectedDepartment, selectedShift]);
+    let mounted = true;
+    const loadWorkspace = async () => {
+      try {
+        const [scheduleResponse, settingsResponse] = await Promise.all([
+          getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid }),
+          getSettingsWorkspace(getMedAssistDataConnect(), { doctorUid }),
+        ]);
+        if (!mounted) {
+          return;
+        }
+        applyWorkspace(scheduleResponse.data, settingsResponse.data);
+      } catch (error) {
+        console.error("Không thể tải dữ liệu lịch & ca trực:", error);
+      }
+    };
+    void loadWorkspace();
+    return () => {
+      mounted = false;
+    };
+  }, [doctorUid]);
+
+  useEffect(() => {
+    setAvailableDoctors(
+      doctorAvailabilities
+        .filter(
+          (item) =>
+            item.department === selectedDepartment &&
+            (item.shiftKey || "").toLowerCase() === selectedShift
+        )
+        .map((item, index) => {
+          const normalizedStatus = (item.status || "").toLowerCase();
+          return {
+            id: item.id,
+            name: item.doctor.displayName.startsWith("BS.")
+              ? item.doctor.displayName
+              : `BS. ${item.doctor.displayName}`,
+            specialty: item.department,
+            doctorUid: item.doctorUid,
+            department: item.department,
+            shiftKey: item.shiftKey,
+            isAvailable: normalizedStatus.includes("ready") || normalizedStatus.includes("sẵn sàng"),
+            avatarSeed: index + 1,
+            avatarUrl: item.doctor.photoURL || null,
+          };
+        })
+    );
+  }, [doctorAvailabilities, selectedDepartment, selectedShift]);
+
+  const handleSwapShift = async (doctor: AvailableDoctor) => {
+    if (!doctor.isAvailable) {
+      return;
+    }
+    try {
+      await createShiftSwapRequest(getMedAssistDataConnect(), {
+        requesterUid: doctorUid,
+        targetDoctorUid: doctor.doctorUid,
+        department: doctor.department,
+        shiftKey: doctor.shiftKey,
+        createdAt: nowIsoString(),
+      });
+      setToastMessage(`Đã gửi yêu cầu đổi ca đến ${doctor.name}.`);
+    } catch (error) {
+      console.error("Không thể gửi yêu cầu đổi ca:", error);
+      setToastMessage("Không thể gửi yêu cầu đổi ca lúc này.");
+    } finally {
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
+  useEffect(() => {
+    if (!departmentOptions.includes(selectedDepartment)) {
+      setSelectedDepartment(departmentOptions[0]);
+    }
+  }, [departmentOptions, selectedDepartment]);
 
   const handlePatientIdBlur = () => {
-    if (newForm.patientId.trim().length > 0) {
-      setNewForm(prev => ({
-        ...prev,
-        patientName: 'Nguyễn Văn Demo',
-        insuranceId: '001085000999'
-      }));
-    } else {
+    const normalizedPatientId = newForm.patientId.trim().toLowerCase();
+
+    if (!normalizedPatientId) {
       setNewForm(prev => ({
         ...prev,
         patientName: '',
         insuranceId: ''
       }));
+      return;
     }
+
+    const matchedPatient = patientOptions.find(
+      patient => patient.patientId.toLowerCase() === normalizedPatientId
+    );
+
+    if (matchedPatient) {
+      setNewForm(prev => ({
+        ...prev,
+        patientId: matchedPatient.patientId,
+        patientName: matchedPatient.patientName,
+        insuranceId: matchedPatient.insuranceId
+      }));
+      return;
+    }
+
+    setNewForm(prev => ({
+      ...prev,
+      patientName: '',
+      insuranceId: ''
+    }));
   };
 
-  const handleCreateSubmit = () => {
-    if (!newForm.patientName) {
+  const handleCreateSubmit = async () => {
+    const matchedPatient = patientOptions.find(
+      patient => patient.patientId.toLowerCase() === newForm.patientId.trim().toLowerCase()
+    );
+    if (!matchedPatient || !matchedPatient.patientName) {
       alert("Vui lòng nhập mã bệnh nhân hợp lệ");
       return;
     }
-    const [year, month, day] = newForm.date.split('-');
-    const eventDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    
-    const newEvent = {
-      id: `custom-${Date.now()}`,
-      patientName: newForm.patientName,
-      patientId: newForm.patientId,
-      insuranceId: newForm.insuranceId,
-      date: eventDate,
+    const patientProfile = patientProfiles.find((profile) => {
+      const normalizedInput = matchedPatient.patientId.toLowerCase();
+      const userCode = (profile.user.userCode || "").toLowerCase();
+      const userUid = (profile.userUid || "").toLowerCase();
+      return userCode === normalizedInput || userUid === normalizedInput;
+    });
+    const payload: UpsertScheduleEventVariables = {
+      id: createClientId("schedule-event"),
+      doctorUid,
+      patientUid: patientProfile?.userUid || null,
+      title: `Khám bệnh - ${matchedPatient.patientName}`,
+      eventType: "consultation",
+      department: selectedDepartment || null,
+      scheduledDate: newForm.date,
       startTime: newForm.startTime,
       endTime: newForm.endTime,
+      status: "SCHEDULED",
+      colorTone: "blue",
+      roomName: selectedDepartment || null,
+      insuranceNumber: matchedPatient.insuranceId || null,
+      patientNameOverride: matchedPatient.patientName,
       timeString: `Ngày ${newForm.date}, ${newForm.startTime} - ${newForm.endTime}`,
-      attachments: [],
-      type: 'blue',
-      title: `Khám bệnh - ${newForm.patientName}`,
-      time: newForm.startTime
+      priority: "Cần xử lý",
+      meetingLink: null,
+      notes: null,
+      attachmentsCount: 0,
+      displayOrder: scheduleEvents.length + 1,
+      isCompleted: false,
+      isDeleted: false,
     };
-    setCustomEvents(prev => [...prev, newEvent]);
-    setIsCreateModalOpen(false);
-    setNewForm({
-      patientId: '',
-      patientName: '',
-      insuranceId: '',
-      date: '2023-10-12',
-      startTime: '08:00',
-      endTime: '09:00'
-    });
+
+    try {
+      await upsertScheduleEvent(getMedAssistDataConnect(), payload);
+      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
+      applyWorkspace(refreshed.data);
+      setIsCreateModalOpen(false);
+      setNewForm({
+        patientId: "",
+        patientName: "",
+        insuranceId: "",
+        date: toIsoDateString(),
+        startTime: "08:00",
+        endTime: "09:00",
+      });
+      setToastMessage(`Đã tạo lịch mới cho ${matchedPatient.patientName}.`);
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (error) {
+      console.error("Không thể tạo lịch mới:", error);
+      alert("Không thể tạo lịch mới lúc này.");
+    }
   };
 
   const handleEventClick = (eventData: any) => {
-    setSelectedEvent(eventData);
+    setSelectedEvent(eventData as CalendarEvent);
   };
 
   const closeModal = () => {
     setSelectedEvent(null);
   };
 
-  const handleMarkComplete = () => {
-    if (selectedEvent && selectedEvent.id) {
-      setCompletedEvents(prev => {
-        if (prev.includes(selectedEvent.id)) {
-          return prev.filter(id => id !== selectedEvent.id);
-        }
-        return [...prev, selectedEvent.id];
-      });
+  const handleMarkComplete = async () => {
+    if (!selectedEvent?.id) {
+      return;
+    }
+    const target = scheduleEvents.find((event) => event.id === selectedEvent.id);
+    if (!target) {
       closeModal();
+      return;
+    }
+    const nextEvent: ScheduleEventRow = {
+      ...target,
+      isCompleted: !target.isCompleted,
+      status: !target.isCompleted ? "COMPLETED" : "SCHEDULED",
+    };
+    try {
+      await upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent));
+      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
+      applyWorkspace(refreshed.data);
+      closeModal();
+    } catch (error) {
+      console.error("Không thể cập nhật trạng thái lịch:", error);
+      alert("Không thể cập nhật trạng thái lịch lúc này.");
     }
   };
 
-  const handleDeleteEvent = () => {
-    if (selectedEvent && selectedEvent.id) {
-      setDeletedEvents(prev => [...prev, selectedEvent.id]);
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent?.id) {
+      return;
+    }
+    const target = scheduleEvents.find((event) => event.id === selectedEvent.id);
+    if (!target) {
       closeModal();
+      return;
+    }
+    const nextEvent: ScheduleEventRow = {
+      ...target,
+      isDeleted: true,
+      status: "CANCELLED",
+    };
+    try {
+      await upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent));
+      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
+      applyWorkspace(refreshed.data);
+      closeModal();
+    } catch (error) {
+      console.error("Không thể xoá lịch:", error);
+      alert("Không thể xoá lịch lúc này.");
     }
   };
 
@@ -170,25 +531,33 @@ export default function SchedulePage() {
     todayText = `${absOffset} ${unit} ${direction}`;
   }
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   // Day View Calculations
-  const baseDay = new Date(2023, 9, 12); // Oct 12, 2023
+  const baseDay = new Date(todayStart);
   baseDay.setDate(baseDay.getDate() + offset);
   const dayOfWeek = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][baseDay.getDay()];
   const dayString = `${dayOfWeek}, ${baseDay.getDate()} Tháng ${baseDay.getMonth() + 1}, ${baseDay.getFullYear()}`;
 
   // Week View Calculations
-  const baseWeekStart = new Date(2023, 9, 9); // Oct 9, 2023
-  baseWeekStart.setDate(baseWeekStart.getDate() + offset * 7);
+  const baseWeekStart = new Date(todayStart);
+  const currentDay = baseWeekStart.getDay();
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+  baseWeekStart.setDate(baseWeekStart.getDate() + mondayOffset + offset * 7);
   const weekDays = Array.from({length: 7}).map((_, i) => {
     const d = new Date(baseWeekStart);
     d.setDate(d.getDate() + i);
     const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    const isToday = offset === 0 && i === 3;
+    const isToday =
+      d.getDate() === todayStart.getDate() &&
+      d.getMonth() === todayStart.getMonth() &&
+      d.getFullYear() === todayStart.getFullYear();
     return { name: dayNames[d.getDay()], date: d.getDate(), isToday, fullDate: d };
   });
 
   // Month View Calculations
-  const baseMonthDate = new Date(2023, 9, 1); // Oct 1, 2023
+  const baseMonthDate = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
   baseMonthDate.setMonth(baseMonthDate.getMonth() + offset);
   
   const currentYear = baseMonthDate.getFullYear();
@@ -214,7 +583,10 @@ export default function SchedulePage() {
   
   // Current month days
   for (let i = 1; i <= daysInMonth; i++) {
-    const isToday = offset === 0 && i === 12 && currentMonth === 9 && currentYear === 2023; // Hardcoded today as Oct 12, 2023
+    const isToday =
+      i === todayStart.getDate() &&
+      currentMonth === todayStart.getMonth() &&
+      currentYear === todayStart.getFullYear();
     monthDays.push({
       date: i,
       isCurrentMonth: true,
@@ -234,20 +606,10 @@ export default function SchedulePage() {
     });
   }
 
-  const monthEvents = [
-    { id: 'month-1', date: new Date(2023, 9, 10), title: 'Khám tổng quát', time: '08:30', type: 'green' },
-    { id: 'month-2', date: new Date(2023, 9, 11), title: 'Xét nghiệm máu', time: '10:45', type: 'blue' },
-    { id: 'month-3', date: new Date(2023, 9, 12), title: 'Khám từ xa', time: '08:00', type: 'orange' },
-    { id: 'month-4', date: new Date(2023, 9, 12), title: 'Họp chuyên môn', time: '14:00', type: 'blue' },
-    { id: 'month-5', date: new Date(2023, 9, 13), title: 'Nội soi dạ dày', time: '10:00', type: 'purple' },
-    { id: 'month-6', date: new Date(2023, 9, 18), title: 'Hội chẩn ca khó', time: '15:00', type: 'red' },
-    { id: 'month-7', date: new Date(2023, 9, 25), title: 'Khám định kỳ', time: '09:00', type: 'green' },
-    { id: 'month-8', date: new Date(2023, 10, 2), title: 'Họp giao ban', time: '08:00', type: 'blue' },
-    { id: 'month-9', date: new Date(2023, 8, 28), title: 'Kiểm tra thiết bị', time: '16:00', type: 'orange' },
-  ];
+  const monthEvents: CalendarEvent[] = [];
 
   // Month Title
-  let currentMonthStr = "Tháng 10, 2023";
+  let currentMonthStr = "";
   if (view === 'Ngày') {
     currentMonthStr = `Tháng ${baseDay.getMonth() + 1}, ${baseDay.getFullYear()}`;
   } else if (view === 'Tuần') {
@@ -631,16 +993,7 @@ export default function SchedulePage() {
                       <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar pr-1">
                         {dayEvents.filter(e => !deletedEvents.includes(e.id)).map((event, idx) => (
                           <div key={idx} 
-                            onClick={() => handleEventClick({
-                              id: event.id,
-                              patientName: "Bệnh nhân mẫu",
-                              patientId: "0123456789",
-                              insuranceId: "001085000123",
-                              timeString: `${day.date}/${day.fullDate.getMonth()+1}/${day.fullDate.getFullYear()}, ${event.time}`,
-                              attachments: [
-                                { name: "KetQuaKham.pdf", type: "pdf" }
-                              ]
-                            })}
+                            onClick={() => handleEventClick(event)}
                             className={`text-[10px] sm:text-xs px-1.5 py-1 rounded truncate font-medium cursor-pointer hover:opacity-80 transition-opacity
                             ${event.type === 'green' ? 'bg-green-100 text-green-800' : 
                               event.type === 'blue' ? 'bg-blue-100 text-blue-800' : 
@@ -673,7 +1026,7 @@ export default function SchedulePage() {
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-slate-900">Quản lý ca trực</h2>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Xem tất cả</button>
+              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">xem chi tiết</button>
             </div>
             
             <div className="mb-6">
@@ -684,11 +1037,9 @@ export default function SchedulePage() {
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-3 px-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold cursor-pointer transition-all"
                 >
-                  <option value="Phòng Flem 407">Phòng Flem 407</option>
-                  <option value="Phòng Khám 1">Phòng Khám 1</option>
-                  <option value="Phòng Cấp Cứu">Phòng Cấp Cứu</option>
-                  <option value="Khoa Nhi">Khoa Nhi</option>
-                  <option value="Nội tiết">Nội tiết</option>
+                  {departmentOptions.map((department) => (
+                    <option key={department} value={department}>{department}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
               </div>
@@ -704,7 +1055,7 @@ export default function SchedulePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm">Ca Sáng</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-0.5">08:00 - 12:00</p>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5">{shiftTimeLabels.morning}</p>
                 </div>
               </div>
               <div 
@@ -716,7 +1067,7 @@ export default function SchedulePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm">Ca Chiều</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-0.5">13:00 - 17:00</p>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5">{shiftTimeLabels.afternoon}</p>
                 </div>
               </div>
               <div 
@@ -728,7 +1079,7 @@ export default function SchedulePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm">Ca Trực Đêm</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-0.5">20:00 - 06:00</p>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5">{shiftTimeLabels.night}</p>
                 </div>
               </div>
             </div>
@@ -743,7 +1094,7 @@ export default function SchedulePage() {
                 <div key={doc.id} className={`flex items-center justify-between ${!doc.isAvailable ? 'opacity-70' : ''}`}>
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <img src={`https://picsum.photos/seed/doctor${doc.avatarSeed}/100/100`} referrerPolicy="no-referrer" alt="Doctor" className={`w-10 h-10 rounded-full object-cover border border-slate-200 ${!doc.isAvailable ? 'grayscale' : ''}`} />
+                      <img src={doc.avatarUrl || `https://picsum.photos/seed/doctor${doc.avatarSeed}/100/100`} referrerPolicy="no-referrer" alt="Doctor" className={`w-10 h-10 rounded-full object-cover border border-slate-200 ${!doc.isAvailable ? 'grayscale' : ''}`} />
                       <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${doc.isAvailable ? 'bg-green-500' : 'bg-slate-300'}`}></span>
                     </div>
                     <div>
@@ -752,7 +1103,7 @@ export default function SchedulePage() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => doc.isAvailable ? handleSwapShift(doc.name) : undefined}
+                    onClick={() => doc.isAvailable ? handleSwapShift(doc) : undefined}
                     className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${doc.isAvailable ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' : 'text-slate-500 bg-slate-100 hover:bg-slate-200'}`}
                   >
                     {doc.isAvailable ? 'Đổi ca' : 'Hẹn sau'}
@@ -808,8 +1159,16 @@ export default function SchedulePage() {
                     value={newForm.patientId}
                     onChange={e => setNewForm({...newForm, patientId: e.target.value})}
                     onBlur={handlePatientIdBlur}
+                    list="existing-patient-id-options"
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
+                  <datalist id="existing-patient-id-options">
+                    {patientOptions.map((patient) => (
+                      <option key={patient.patientId} value={patient.patientId}>
+                        {patient.patientName}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Họ và tên</label>

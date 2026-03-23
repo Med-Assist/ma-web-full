@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   BarChart2,
   Calendar,
@@ -16,7 +16,6 @@ import {
   MessageSquare,
   MessageSquareText,
   Pill,
-  Plus,
   Search,
   Settings,
   UserRound,
@@ -24,6 +23,9 @@ import {
 import { FloatingChat } from "@/features/chat/FloatingZaloContacts";
 import { DashboardPageHeader } from "@/shared/ui/DashboardPageHeader";
 import { auth } from "@/shared/lib/firebase";
+import { getDoctorProfileWorkspace } from "@/shared/lib/generated-fdc";
+import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
+import { clearRememberedDoctorUid, getActiveDoctorUid } from "@/shared/lib/medassist-runtime";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -44,53 +46,23 @@ const navItems: NavItem[] = [
   { icon: LayoutGrid, label: "Trang chủ", path: "/dashboard" },
   { icon: FileText, label: "Bệnh án điện tử", path: "/dashboard/patient" },
   { icon: Calendar, label: "Ca trực & Lịch khám", path: "/dashboard/schedule" },
-  { icon: Eye, label: "Chẩn đoán AI Võng mạc", path: "/dashboard/ai-diagnosis" },
+  { icon: Eye, label: "Chẩn đoán AI võng mạc", path: "/dashboard/ai-diagnosis" },
   { icon: Pill, label: "Toa thuốc & Dược phẩm", path: "/dashboard/pharmacy" },
   { icon: MessageSquare, label: "Tư vấn trực tuyến", path: "/dashboard/consultation" },
   { icon: BarChart2, label: "Báo cáo & Thống kê", path: "/dashboard/reports" },
 ];
 
 function getPageHeader(pathname: string) {
-  if (pathname === "/dashboard") {
-    return { icon: LayoutGrid, title: "Tổng quan" };
-  }
-
-  if (pathname.startsWith("/dashboard/patient")) {
-    return { icon: FileText, title: "Bệnh án điện tử" };
-  }
-
-  if (pathname.startsWith("/dashboard/schedule")) {
-    return { icon: Calendar, title: "Ca trực & Lịch khám" };
-  }
-
-  if (pathname.startsWith("/dashboard/ai-diagnosis")) {
-    return { icon: Eye, title: "Chẩn đoán AI võng mạc" };
-  }
-
-  if (pathname.startsWith("/dashboard/record-digitization")) {
-    return { icon: FileText, title: "Số hóa hồ sơ bệnh án" };
-  }
-
-  if (pathname.startsWith("/dashboard/pharmacy")) {
-    return { icon: Pill, title: "Toa thuốc & Dược phẩm" };
-  }
-
-  if (pathname.startsWith("/dashboard/consultation")) {
-    return { icon: MessageSquareText, title: "Tư vấn trực tiếp" };
-  }
-
-  if (pathname.startsWith("/dashboard/reports")) {
-    return { icon: BarChart2, title: "Báo cáo & Thống kê" };
-  }
-
-  if (pathname.startsWith("/dashboard/profile")) {
-    return { icon: UserRound, title: "Hồ sơ bác sĩ" };
-  }
-
-  if (pathname.startsWith("/dashboard/settings")) {
-    return { icon: Settings, title: "Cài đặt hệ thống" };
-  }
-
+  if (pathname === "/dashboard") return { icon: LayoutGrid, title: "Tổng quan" };
+  if (pathname.startsWith("/dashboard/patient")) return { icon: FileText, title: "Bệnh án điện tử" };
+  if (pathname.startsWith("/dashboard/schedule")) return { icon: Calendar, title: "Ca trực & Lịch khám" };
+  if (pathname.startsWith("/dashboard/ai-diagnosis")) return { icon: Eye, title: "Chẩn đoán AI võng mạc" };
+  if (pathname.startsWith("/dashboard/record-digitization")) return { icon: FileText, title: "Số hóa hồ sơ bệnh án" };
+  if (pathname.startsWith("/dashboard/pharmacy")) return { icon: Pill, title: "Toa thuốc & Dược phẩm" };
+  if (pathname.startsWith("/dashboard/consultation")) return { icon: MessageSquareText, title: "Tư vấn trực tiếp" };
+  if (pathname.startsWith("/dashboard/reports")) return { icon: BarChart2, title: "Báo cáo & Thống kê" };
+  if (pathname.startsWith("/dashboard/profile")) return { icon: UserRound, title: "Hồ sơ bác sĩ" };
+  if (pathname.startsWith("/dashboard/settings")) return { icon: Settings, title: "Cài đặt hệ thống" };
   return null;
 }
 
@@ -102,16 +74,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    const syncSidebarProfile = async (uidFromAuth?: string | null) => {
+      const doctorUid = (uidFromAuth || getActiveDoctorUid()).trim();
+      if (!doctorUid) {
+        return;
+      }
+
+      try {
+        const response = await getDoctorProfileWorkspace(getMedAssistDataConnect(), { doctorUid });
+        if (!mounted) {
+          return;
+        }
+
+        const doctorProfile = response.data.doctorProfiles[0];
+        const nextName =
+          doctorProfile?.fullName ||
+          auth.currentUser?.displayName ||
+          `Bác sĩ ${doctorUid.slice(-4)}`;
+        const nextAvatar =
+          doctorProfile?.avatarUrl ||
+          auth.currentUser?.photoURL ||
+          "/doctor.png";
+
+        setSidebarName(nextName);
+        setSidebarAvatar(nextAvatar);
+      } catch (error) {
+        console.error("Không thể đồng bộ thông tin bác sĩ trên thanh bên:", error);
+        if (!mounted) {
+          return;
+        }
+
+        setSidebarName(auth.currentUser?.displayName || `Bác sĩ ${doctorUid.slice(-4)}`);
+        setSidebarAvatar(auth.currentUser?.photoURL || "/doctor.png");
+      }
+    };
+
+    void syncSidebarProfile(auth.currentUser?.uid || null);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      void syncSidebarProfile(user?.uid || null);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     const handleProfileUpdate = (event: Event) => {
       const detail = (event as CustomEvent<ProfileUpdateDetail>).detail;
-
-      if (detail.avatar !== undefined) {
-        setSidebarAvatar(detail.avatar);
-      }
-
-      if (detail.name !== undefined) {
-        setSidebarName(detail.name);
-      }
+      if (detail.avatar !== undefined) setSidebarAvatar(detail.avatar || "/doctor.png");
+      if (detail.name !== undefined) setSidebarName(detail.name || "Bác sĩ MedAssist");
     };
 
     window.addEventListener("profileUpdate", handleProfileUpdate);
@@ -126,36 +141,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <>
         <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
           <Image
-            src="/doctor.png"
-            alt="James Dalton"
+            src={sidebarAvatar}
+            alt={sidebarName}
             width={32}
             height={32}
+            unoptimized
             className="h-8 w-8 rounded-full object-cover"
           />
-          <span className="text-sm font-semibold text-slate-700">ID: 99420 • James Dalton</span>
+          <span className="text-sm font-semibold text-slate-700">ID: 99420 • {sidebarName}</span>
           <ChevronDown className="h-4 w-4 text-slate-400" />
         </div>
 
         <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-700">
           <Search className="h-4 w-4" />
         </button>
-      </>
-    );
-  } else if (pathname.startsWith("/dashboard/pharmacy")) {
-    pageHeaderActions = (
-      <>
-        <button className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#5a96cb] to-[#6aa7db] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_22px_rgba(90,150,203,0.24)] transition-transform hover:-translate-y-0.5">
-          <Plus className="h-4 w-4" />
-          Tạo đơn mới
-        </button>
-
-        <div className="relative w-full min-w-[260px] lg:w-[320px]">
-          <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            className="w-full rounded-full border border-slate-200 bg-white py-3 pl-4 pr-11 text-sm text-slate-700 outline-none transition-all focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
-          />
-        </div>
       </>
     );
   } else if (pathname.startsWith("/dashboard/reports")) {
@@ -172,11 +171,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
-
     setIsLoggingOut(true);
 
     try {
       await signOut(auth);
+      clearRememberedDoctorUid();
       router.replace("/");
       router.refresh();
     } catch (error) {
@@ -287,7 +286,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       <main className="relative ml-64 flex-1 overflow-x-hidden p-6">
-        {pageHeader ? <DashboardPageHeader icon={pageHeader.icon} title={pageHeader.title} actions={pageHeaderActions} /> : null}
+        {pageHeader && !pathname.startsWith("/dashboard/pharmacy") ? (
+          <DashboardPageHeader icon={pageHeader.icon} title={pageHeader.title} actions={pageHeaderActions} />
+        ) : null}
         {children}
       </main>
 

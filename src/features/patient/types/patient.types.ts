@@ -1,10 +1,10 @@
 export interface Patient {
-  id: string; 
+  id: string;
   patientCode: string;
   fullName: string;
   age: number;
-  gender: 'Nam' | 'Nữ' | 'Khác';
+  gender: "Nam" | "Nữ" | "Khác";
   lastVisit: string;
-  status: 'Bình thường' | 'Cần theo dõi' | 'Nguy cơ cao';
+  status: "Bình thường" | "Cần theo dõi" | "Nguy cơ cao";
   avatarUrl?: string;
 }

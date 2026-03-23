@@ -1,330 +1,718 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
-  Calendar,
-  CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   Download,
-  Eye,
-  FileText,
   FolderOpen,
+  Loader2,
   Printer,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import {
+  createAiDiagnosis,
+  getAiDiagnosisWorkspace,
+  getPatientsByDoctor,
+  type GetAiDiagnosisWorkspaceData,
+  type GetPatientsByDoctorData,
+  updateAiDiagnosisReview,
+  upsertAiDiagnosisReference,
+} from "@/shared/lib/generated-fdc";
+import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
+import {
+  createClientId,
+  downloadTextFile,
+  getActiveDoctorUid,
+  triggerBrowserPrint,
+} from "@/shared/lib/medassist-runtime";
 
+type PatientProfileRow = GetPatientsByDoctorData["patientProfiles"][number];
+type DiagnosisRow = GetAiDiagnosisWorkspaceData["aiDiagnoses"][number];
 type PreviewMode = "original" | "overlay";
+type Notice = { tone: "success" | "error" | "info"; message: string } | null;
 
-type ReferenceSnapshot = {
-  id: string;
-  label: string;
-  diseaseLevel: string;
-  aiScore: string;
-  confidence: string;
-  doctorNote: string;
-  archiveLabel: string;
+type PatientOption = {
+  uid: string;
+  displayName: string;
+  userCode?: string | null;
 };
 
-const referenceSnapshots: ReferenceSnapshot[] = [
-  {
-    id: "gp1",
-    label: "12/01/2024 (GP 1)",
-    diseaseLevel: "Võng mạc ĐTĐ tiền tăng sinh (Rất nhẹ)",
-    aiScore: "0.42",
-    confidence: "98.1%",
-    doctorNote:
-      "Phát hiện 3 vi phình mạch đơn lẻ tại vùng phía trên võng mạc. Không có dấu hiệu phù hoàng điểm hay xuất huyết võng mạc diện rộng. Hẹn tái khám sau 4-6 tháng để theo dõi tiến triển.",
-    archiveLabel: "Ảnh gốc lưu trữ (12/01/2024)",
-  },
-  {
-    id: "gp2",
-    label: "08/09/2023 (GP 2)",
-    diseaseLevel: "Tăng sinh nhẹ, cần theo dõi",
-    aiScore: "0.37",
-    confidence: "96.8%",
-    doctorNote:
-      "Các mảng xuất tiết cứng ít, chưa ghi nhận tân mạch mới. Khuyến nghị duy trì kiểm soát đường huyết và tái chụp sau 6 tháng.",
-    archiveLabel: "Ảnh gốc lưu trữ (08/09/2023)",
-  },
-  {
-    id: "gp3",
-    label: "14/03/2023 (GP 3)",
-    diseaseLevel: "NPDR giai đoạn sớm",
-    aiScore: "0.28",
-    confidence: "94.7%",
-    doctorNote:
-      "Rải rác vi xuất huyết nhỏ ngoại vi, chưa ảnh hưởng vùng hoàng điểm. Điều trị nội khoa và hẹn đánh giá lại định kỳ.",
-    archiveLabel: "Ảnh gốc lưu trữ (14/03/2023)",
-  },
-];
+const SUPPORTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
 
-const retinaVessels = [
-  "M262 259C219 184 164 141 110 93",
-  "M260 260C232 195 201 138 177 78",
-  "M260 260C257 199 255 136 261 66",
-  "M259 260C284 195 309 151 350 91",
-  "M260 260C315 214 355 185 410 150",
-  "M260 260C323 246 384 242 455 226",
-  "M260 260C322 273 386 306 432 346",
-  "M260 260C305 310 342 356 370 415",
-  "M260 260C272 327 281 390 282 453",
-  "M260 260C240 329 206 382 166 430",
-  "M260 260C211 302 171 343 124 382",
-  "M260 260C192 272 133 281 72 301",
-  "M260 260C194 241 141 214 82 173",
-  "M260 260C231 231 204 199 171 158",
-  "M260 260C286 233 300 205 324 173",
-  "M260 260C279 277 304 289 334 314",
-];
+function compareDiagnosisDates(left: DiagnosisRow, right: DiagnosisRow) {
+  const leftTime = left.examDate ? new Date(left.examDate).getTime() : 0;
+  const rightTime = right.examDate ? new Date(right.examDate).getTime() : 0;
+  return rightTime - leftTime;
+}
 
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#8ca6c7]">
-      {children}
-    </p>
+function buildPatientOptions(
+  patientProfiles: PatientProfileRow[],
+  diagnoses: DiagnosisRow[]
+): PatientOption[] {
+  const map = new Map<string, PatientOption>();
+
+  patientProfiles.forEach((profile) => {
+    map.set(profile.userUid, {
+      uid: profile.userUid,
+      displayName: profile.user.displayName,
+      userCode: profile.user.userCode || null,
+    });
+  });
+
+  diagnoses.forEach((diagnosis) => {
+    const current = map.get(diagnosis.patientUid);
+    map.set(diagnosis.patientUid, {
+      uid: diagnosis.patientUid,
+      displayName: current?.displayName || diagnosis.patient.displayName,
+      userCode: current?.userCode || diagnosis.patient.userCode || null,
+    });
+  });
+
+  return Array.from(map.values()).sort((left, right) =>
+    left.displayName.localeCompare(right.displayName, "vi", { sensitivity: "base" })
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function toStageNumber(diagnosis: DiagnosisRow | null) {
+  if (!diagnosis) return "--";
+  const stage = diagnosis.stageLabel || "";
+  const match = stage.match(/\d+/);
+  return match?.[0] || "--";
+}
+
+function noticeClass(tone: NonNullable<Notice>["tone"]) {
+  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (tone === "error") return "border-red-200 bg-red-50 text-red-700";
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function parseErrorDetail(detail: unknown) {
+  if (typeof detail !== "string" || !detail.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(detail);
+    const message = parsed?.error?.message;
+
+    if (typeof message === "string" && message.trim()) {
+      return message.trim();
+    }
+  } catch {
+  }
+
+  return detail.trim();
+}
+
+async function readFileAsDataUrl(file: File) {
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Không thể đọc ảnh đã chọn."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadImageFromFile(file: File) {
+  return await new Promise<HTMLImageElement>((resolve, reject) => {
+    // Dùng object URL thay vì Base64. Không gây tốn bộ nhớ DOM của trình duyệt
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    
+    image.onload = () => {
+      URL.revokeObjectURL(url); // Phục hồi bộ nhớ ngay sau khi nạp ảnh xong
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url); // Ngừa rò rỉ bộ nhớ
+      reject(new Error("Không thể đọc định dạng hình ảnh này. Vui lòng thử ảnh khác."));
+    };
+    
+    image.src = url;
+  });
+}
+
+async function prepareImageForAnalysis(file: File) {
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
+    throw new Error("Hiện chỉ hỗ trợ ảnh PNG, JPG hoặc WEBP.");
+  }
+
+  const previewDataUrl = await readFileAsDataUrl(file);
+   const image = await loadImageFromFile(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return {
+      previewDataUrl,
+      uploadDataUrl: previewDataUrl,
+    };
+  }
+
+  const maxSide = 1400;
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  canvas.width = width;
+  canvas.height = height;
+  context.fillStyle = "#05070f";
+  context.fillRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, width, height);
+
+  return {
+    previewDataUrl,
+    uploadDataUrl: canvas.toDataURL("image/jpeg", 0.9),
+  };
+}
+
+function renderPreview(imageUrl: string | null, mode: PreviewMode) {
+  if (!imageUrl) {
+    return (
+      <div className="flex aspect-square items-center justify-center rounded-[28px] bg-[#05070f] px-8 text-center text-sm text-slate-400">
+        Chưa có ảnh để hiển thị
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-4 last:border-b-0 last:pb-0">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</span>
-      <span className="max-w-[220px] text-right text-sm font-semibold text-slate-700">{value}</span>
+    <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[28px] bg-[#05070f] p-5">
+      <img
+        src={imageUrl}
+        alt="Ảnh đáy mắt"
+        className="h-full w-full object-contain object-center opacity-95"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#05070f]/30" />
+      {mode === "overlay" ? (
+        <>
+          <div className="absolute left-[34%] top-[36%] h-12 w-12 rounded-full border-2 border-[#f5a17b] bg-[#f5a17b1f]" />
+          <div className="absolute right-[28%] top-[42%] h-16 w-16 rounded-full border-2 border-[#96c2eb] bg-[#7ab2e21f]" />
+        </>
+      ) : null}
     </div>
   );
 }
 
-function RetinaPreview({ mode }: { mode: PreviewMode }) {
+function renderInfoRow(label: string, value: string) {
   return (
-    <div className="relative aspect-square overflow-hidden rounded-[28px] border border-slate-200 bg-[#040404] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
-      <svg viewBox="0 0 520 520" className="h-full w-full">
-        <defs>
-          <radialGradient id="retinaCore" cx="50%" cy="48%" r="52%">
-            <stop offset="0%" stopColor="#f8ca8c" />
-            <stop offset="16%" stopColor="#df8f5a" />
-            <stop offset="38%" stopColor="#5a2214" />
-            <stop offset="68%" stopColor="#130705" />
-            <stop offset="100%" stopColor="#050505" />
-          </radialGradient>
-          <radialGradient id="retinaHalo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(255,245,228,0.96)" />
-            <stop offset="25%" stopColor="rgba(255,200,140,0.7)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-          </radialGradient>
-        </defs>
-
-        <rect width="520" height="520" fill="#040404" />
-        <circle cx="260" cy="260" r="202" fill="url(#retinaCore)" opacity="0.94" />
-        <circle cx="260" cy="260" r="205" fill="none" stroke="rgba(183,104,64,0.32)" strokeWidth="5" />
-        <circle cx="260" cy="260" r="38" fill="url(#retinaHalo)" />
-        <circle cx="260" cy="260" r="18" fill="#ffe6ba" opacity="0.95" />
-
-        {retinaVessels.map((path, index) => (
-          <path
-            key={path}
-            d={path}
-            fill="none"
-            stroke={index % 2 === 0 ? "rgba(205,96,62,0.9)" : "rgba(168,77,48,0.78)"}
-            strokeLinecap="round"
-            strokeWidth={index % 3 === 0 ? 4.2 : 2.4}
-            opacity={0.96}
-          />
-        ))}
-
-        <circle cx="338" cy="245" r="9" fill="rgba(241,155,108,0.8)" />
-        <circle cx="352" cy="248" r="5" fill="rgba(252,183,129,0.76)" />
-        <circle cx="183" cy="203" r="4" fill="rgba(241,155,108,0.65)" />
-
-        {mode === "overlay" ? (
-          <>
-            <circle cx="338" cy="246" r="31" fill="rgba(122,178,226,0.12)" stroke="#96c2eb" strokeWidth="2" />
-            <circle cx="183" cy="203" r="24" fill="rgba(255,160,123,0.12)" stroke="#f5a17b" strokeWidth="2" />
-            <path
-              d="M128 188C161 157 221 124 299 122"
-              fill="none"
-              stroke="rgba(156,199,235,0.52)"
-              strokeDasharray="8 7"
-              strokeWidth="2"
-            />
-            <path
-              d="M315 276C342 287 368 308 388 337"
-              fill="none"
-              stroke="rgba(245,161,123,0.7)"
-              strokeDasharray="7 6"
-              strokeWidth="2"
-            />
-          </>
-        ) : null}
-      </svg>
+    <div className="flex items-start justify-between gap-4 border-t border-slate-100 py-4 first:border-t-0 first:pt-0">
+      <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      <span className="text-right text-sm font-semibold text-slate-800">{value}</span>
     </div>
   );
 }
 
-function ResultCard({
+function renderResultCard({
   eyebrow,
-  title,
   value,
+  title,
   helper,
   accent,
 }: {
   eyebrow: string;
-  title: string;
   value: string;
+  title: string;
   helper: string;
   accent: "red" | "blue" | "green";
 }) {
-  const accentClass = {
-    red: "border-red-100 bg-red-50/80 text-red-600",
-    blue: "border-[#d7e5f4] bg-white text-[#7aa6d3]",
-    green: "border-[#d7e5f4] bg-white text-emerald-500",
-  }[accent];
+  const palette =
+    accent === "red"
+      ? "border-red-100 bg-red-50/80 text-red-600"
+      : accent === "green"
+        ? "border-emerald-100 bg-white text-emerald-500"
+        : "border-[#d7e5f4] bg-white text-[#7aa6d3]";
 
   return (
-    <div className={`rounded-[22px] border p-5 shadow-[0_10px_28px_rgba(148,163,184,0.08)] ${accentClass}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">{eyebrow}</p>
-          <p className="mt-3 text-[34px] font-bold leading-none">{value}</p>
-        </div>
-        {accent === "red" ? <AlertTriangle className="h-5 w-5 text-red-400" /> : null}
-        {accent === "blue" ? <Eye className="h-5 w-5 text-[#8db7da]" /> : null}
-        {accent === "green" ? <ShieldCheck className="h-5 w-5 text-emerald-400" /> : null}
-      </div>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{title}</p>
+    <div className={`rounded-[24px] border p-5 shadow-[0_12px_30px_rgba(148,163,184,0.08)] ${palette}`}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">{eyebrow}</p>
+      <p className="mt-4 text-[32px] font-bold leading-none">{value}</p>
+      <p className="mt-3 text-sm font-semibold text-slate-900">{title}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{helper}</p>
     </div>
   );
 }
 
 export function AiDiagnosisWorkspace() {
+  const doctorUid = getActiveDoctorUid();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [workspace, setWorkspace] = useState<GetAiDiagnosisWorkspaceData | null>(null);
+  const [patientProfiles, setPatientProfiles] = useState<PatientProfileRow[]>([]);
+  const [selectedPatientUid, setSelectedPatientUid] = useState<string | null>(null);
+  const [selectedDiagnosisId, setSelectedDiagnosisId] = useState<string | null>(null);
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("original");
-  const [selectedReferenceId, setSelectedReferenceId] = useState(referenceSnapshots[0].id);
-  const [expertNote, setExpertNote] = useState(
-    "Ưu tiên kiểm soát đường huyết gắt gao trong 8 tuần tới. Theo dõi thêm tổn thương vi mạch quanh đĩa thị và đối chiếu ảnh OCT nếu bệnh nhân tiếp tục than phiền mờ mắt về đêm."
+  const [expertNote, setExpertNote] = useState("");
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSavingReview, setIsSavingReview] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+
+  const loadWorkspace = async (
+    preservePatientUid?: string | null,
+    preserveDiagnosisId?: string | null
+  ) => {
+    const [aiResponse, patientResponse] = await Promise.all([
+      getAiDiagnosisWorkspace(getMedAssistDataConnect(), { doctorUid }),
+      getPatientsByDoctor(getMedAssistDataConnect(), { doctorUid }),
+    ]);
+
+    const diagnoses = aiResponse.data.aiDiagnoses.slice().sort(compareDiagnosisDates);
+    const patients = buildPatientOptions(patientResponse.data.patientProfiles, diagnoses);
+    const nextPatientUid =
+      preservePatientUid && patients.some((item) => item.uid === preservePatientUid)
+        ? preservePatientUid
+        : diagnoses[0]?.patientUid || patients[0]?.uid || null;
+    const nextDiagnosisId =
+      preserveDiagnosisId && diagnoses.some((item) => item.id === preserveDiagnosisId)
+        ? preserveDiagnosisId
+        : diagnoses.find((item) => item.patientUid === nextPatientUid)?.id || null;
+
+    setWorkspace({ ...aiResponse.data, aiDiagnoses: diagnoses });
+    setPatientProfiles(patientResponse.data.patientProfiles);
+    setSelectedPatientUid(nextPatientUid);
+    setSelectedDiagnosisId(nextDiagnosisId);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    loadWorkspace()
+      .catch((error) => {
+        console.error("Không thể tải giao diện AI diagnosis:", error);
+        if (mounted) {
+          setNotice({
+            tone: "error",
+            message: "Không thể tải dữ liệu chẩn đoán AI lúc này.",
+          });
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [doctorUid]);
+
+  const diagnoses = useMemo(
+    () => workspace?.aiDiagnoses.slice().sort(compareDiagnosisDates) ?? [],
+    [workspace?.aiDiagnoses]
+  );
+
+  const patientOptions = useMemo(
+    () => buildPatientOptions(patientProfiles, diagnoses),
+    [diagnoses, patientProfiles]
+  );
+
+  const patientDiagnoses = useMemo(
+    () => diagnoses.filter((item) => item.patientUid === selectedPatientUid),
+    [diagnoses, selectedPatientUid]
+  );
+
+  const activeDiagnosis = useMemo(
+    () =>
+      patientDiagnoses.find((item) => item.id === selectedDiagnosisId) ||
+      patientDiagnoses[0] ||
+      null,
+    [patientDiagnoses, selectedDiagnosisId]
+  );
+
+  const activeReferences = useMemo(
+    () =>
+      (workspace?.aiDiagnosisReferences ?? [])
+        .filter((item) => item.diagnosisId === activeDiagnosis?.id)
+        .slice()
+        .sort((left, right) => left.displayOrder - right.displayOrder),
+    [activeDiagnosis?.id, workspace?.aiDiagnosisReferences]
   );
 
   const selectedReference = useMemo(
-    () => referenceSnapshots.find((snapshot) => snapshot.id === selectedReferenceId) ?? referenceSnapshots[0],
-    [selectedReferenceId]
+    () => activeReferences.find((item) => item.id === selectedReferenceId) || activeReferences[0] || null,
+    [activeReferences, selectedReferenceId]
   );
 
+  const selectedPatient = useMemo(
+    () => patientOptions.find((item) => item.uid === selectedPatientUid) || null,
+    [patientOptions, selectedPatientUid]
+  );
+
+  useEffect(() => {
+    setSelectedDiagnosisId((current) =>
+      current && patientDiagnoses.some((item) => item.id === current)
+        ? current
+        : patientDiagnoses[0]?.id || null
+    );
+  }, [patientDiagnoses]);
+
+  useEffect(() => {
+    setSelectedReferenceId(activeReferences[0]?.id || null);
+  }, [activeDiagnosis?.id, activeReferences]);
+
+  useEffect(() => {
+    setExpertNote(activeDiagnosis?.doctorAdvice || "");
+  }, [activeDiagnosis?.id]);
+
+  const handleAnalyzeFile = async (file: File) => {
+    if (!selectedPatient) {
+      setNotice({
+        tone: "error",
+        message: "Hãy chọn bệnh nhân trước khi lưu lịch sử chẩn đoán.",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setNotice({
+      tone: "info",
+      message: "Đang tối ưu và phân tích ảnh với Gemini...",
+    });
+
+    try {
+      const { previewDataUrl, uploadDataUrl } = await prepareImageForAnalysis(file);
+      setPendingPreviewUrl(previewDataUrl);
+
+      const historySummary = patientDiagnoses
+        .slice(0, 3)
+        .map((item) => `${item.examDate || "Không rõ ngày"}: ${item.stageLabel || item.riskLevel}`)
+        .join(" | ");
+
+      const response = await fetch("/api/ai/retina", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName: selectedPatient.displayName,
+          patientCode: selectedPatient.userCode || null,
+          screeningNote: activeDiagnosis?.reportSummary || null,
+          historySummary: historySummary || null,
+          imageDataUrl: uploadDataUrl,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.analysis) {
+        throw new Error(
+          parseErrorDetail(payload?.detail) ||
+            payload?.error ||
+            "Không thể phân tích ảnh AI lúc này."
+        );
+      }
+
+      const examDate = new Date().toLocaleDateString("vi-VN");
+      const aiScore = `${Math.round(payload.analysis.confidenceScore * 100)}%`;
+      const created = await createAiDiagnosis(getMedAssistDataConnect(), {
+        patientUid: selectedPatient.uid,
+        doctorUid,
+        fundusImageUrl: uploadDataUrl,
+        archiveImagePath: uploadDataUrl,
+        riskLevel: payload.analysis.riskLevel,
+        confidenceScore: payload.analysis.confidenceScore,
+        aiAnalysis: payload.analysis.findings.join(" • "),
+        doctorAdvice: payload.analysis.doctorAdvice,
+        stageLabel: payload.analysis.stageLabel,
+        aiScore,
+        examDate,
+        deviceName: "Gemini Vision",
+        technicianName: "Bác sĩ tải ảnh trực tiếp",
+        doctorApproved: false,
+        reportSummary: payload.analysis.summary,
+      });
+
+      await upsertAiDiagnosisReference(getMedAssistDataConnect(), {
+        id: createClientId("ai-reference"),
+        diagnosisId: created.data.aiDiagnosis_insert.id,
+        label: `Lần quét ${examDate}`,
+        diseaseLevel: payload.analysis.stageLabel,
+        aiScore,
+        confidence: aiScore,
+        doctorNote: payload.analysis.doctorAdvice,
+        archiveLabel: file.name || `Ảnh đáy mắt ${examDate}`,
+        displayOrder: 1,
+      });
+
+      await loadWorkspace(selectedPatient.uid, created.data.aiDiagnosis_insert.id);
+      setPendingPreviewUrl(null);
+      setNotice({
+        tone: "success",
+        message: "Đã lưu ca AI mới vào lịch sử của bệnh nhân.",
+      });
+    } catch (error) {
+      console.error("Không thể phân tích ảnh AI:", error);
+      const detail = error instanceof Error ? error.message : "Đã có lỗi xảy ra.";
+      setNotice({
+        tone: "error",
+        message:
+          detail.includes("GEMINI_API_KEY")
+            ? "Chưa cấu hình GEMINI_API_KEY cho hệ thống."
+            : `Không thể phân tích ảnh AI lúc này. ${detail}`,
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      void handleAnalyzeFile(file);
+    }
+    event.target.value = "";
+  };
+
+  const handleApproveReport = async () => {
+    if (!activeDiagnosis) {
+      return;
+    }
+
+    setIsSavingReview(true);
+    try {
+      await updateAiDiagnosisReview(getMedAssistDataConnect(), {
+        id: activeDiagnosis.id,
+        doctorAdvice: expertNote,
+        doctorApproved: true,
+        reportSummary: activeDiagnosis.reportSummary || activeDiagnosis.aiAnalysis || null,
+        aiScore: activeDiagnosis.aiScore || `${Math.round(activeDiagnosis.confidenceScore * 100)}%`,
+        confidenceScore: activeDiagnosis.confidenceScore,
+      });
+
+      await loadWorkspace(activeDiagnosis.patientUid, activeDiagnosis.id);
+      setNotice({
+        tone: "success",
+        message: "Đã phê duyệt và lưu báo cáo AI vào bệnh án.",
+      });
+    } catch (error) {
+      console.error("Không thể lưu báo cáo AI:", error);
+      setNotice({
+        tone: "error",
+        message: "Không thể lưu báo cáo AI lúc này.",
+      });
+    } finally {
+      setIsSavingReview(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="rounded-[32px] border border-slate-200 bg-white p-8 text-sm font-medium text-slate-500 shadow-sm">
+        Đang tải dữ liệu chẩn đoán AI...
+      </section>
+    );
+  }
+
+  if (!patientOptions.length) {
+    return (
+      <section className="rounded-[32px] border border-slate-200 bg-white p-8 text-sm font-medium text-slate-500 shadow-sm">
+        Chưa có bệnh nhân nào trong hệ thống để bắt đầu chẩn đoán AI.
+      </section>
+    );
+  }
+
+  const confidenceText = activeDiagnosis
+    ? `${Math.round(activeDiagnosis.confidenceScore * 100)}%`
+    : "--";
+  const currentImageUrl = pendingPreviewUrl || activeDiagnosis?.fundusImageUrl || null;
+  const selectedPatientLabel = selectedPatient
+    ? `${selectedPatient.displayName}${selectedPatient.userCode ? ` • ${selectedPatient.userCode}` : ""}`
+    : "Chọn bệnh nhân";
+
   return (
-    <section className="space-y-5 xl:-mx-4">
-      <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.06)]">
-        <div className="grid xl:grid-cols-[1.12fr_1.56fr_1.14fr] 2xl:grid-cols-[1.16fr_1.62fr_1.18fr]">
-          <aside className="space-y-6 border-b border-slate-200 p-5 2xl:p-6 xl:border-b-0 xl:border-r">
-            <SectionLabel>Hình ảnh hiện tại</SectionLabel>
+    <div className="space-y-5 xl:-mx-4">
+      <div className="flex items-center gap-3 text-sm text-slate-500">
+        <Link
+          href="/dashboard/patient"
+          className="inline-flex items-center gap-2 font-semibold text-[#35678E] hover:text-[#274e6d]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Quay lại danh sách
+        </Link>
+      </div>
 
-            <div className="relative">
-              <RetinaPreview mode={previewMode} />
+      {notice ? (
+        <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${noticeClass(notice.tone)}`}>
+          {notice.message}
+        </div>
+      ) : null}
 
-              <div className="absolute right-4 top-4 inline-flex rounded-xl border border-white/10 bg-white/90 p-1 shadow-sm backdrop-blur">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("original")}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
-                    previewMode === "original" ? "bg-slate-900 text-white" : "text-slate-500"
-                  }`}
-                >
-                  Gốc
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("overlay")}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
-                    previewMode === "overlay" ? "bg-slate-900 text-white" : "text-slate-500"
-                  }`}
-                >
-                  Lớp phủ
-                </button>
+      <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.06)]">
+        <div className="grid xl:grid-cols-[380px_minmax(0,1fr)_360px]">
+          <aside className="space-y-6 border-b border-slate-200 p-6 xl:border-b-0 xl:border-r">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#8ca6c7]">
+                  Hình ảnh hiện tại
+                </p>
+                <div className="relative max-w-[190px] flex-1">
+                  <select
+                    value={selectedPatientUid || ""}
+                    onChange={(event) => setSelectedPatientUid(event.target.value)}
+                    className="w-full appearance-none rounded-full border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
+                  >
+                    {patientOptions.map((patient) => (
+                      <option key={patient.uid} value={patient.uid}>
+                        {patient.displayName}
+                        {patient.userCode ? ` • ${patient.userCode}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-3">
+                {renderPreview(currentImageUrl, previewMode)}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedPatientLabel}</p>
+                    <p className="text-xs text-slate-500">
+                      Hỗ trợ PNG, JPG và WEBP. Ảnh sẽ được tối ưu trước khi gửi Gemini.
+                    </p>
+                  </div>
+                  <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("original")}
+                      className={`rounded-lg px-3 py-2 text-xs font-bold ${
+                        previewMode === "original" ? "bg-slate-900 text-white" : "text-slate-500"
+                      }`}
+                    >
+                      Gốc
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("overlay")}
+                      className={`rounded-lg px-3 py-2 text-xs font-bold ${
+                        previewMode === "overlay" ? "bg-slate-900 text-white" : "text-slate-500"
+                      }`}
+                    >
+                      Lớp phủ
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5 shadow-[0_10px_28px_rgba(148,163,184,0.06)]">
-              <div className="mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#8db7da]" />
-                <h3 className="text-sm font-bold text-slate-800">Thông tin lần quét</h3>
-              </div>
-
-              <InfoRow label="Ngày khám" value="24/05/2024" />
-              <InfoRow label="Thiết bị" value="Optos Daytona" />
-              <InfoRow label="Kỹ thuật viên" value="Dr. Nguyen V." />
-            </div>
+            <section className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+              <h3 className="mb-5 text-sm font-bold text-slate-800">Thông tin lần quét</h3>
+              {renderInfoRow("Ngày khám", activeDiagnosis?.examDate || "Chưa cập nhật")}
+              {renderInfoRow("Thiết bị", activeDiagnosis?.deviceName || "Chưa cập nhật")}
+              {renderInfoRow("Kỹ thuật viên", activeDiagnosis?.technicianName || "Chưa cập nhật")}
+            </section>
 
             <div className="space-y-3">
-              <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#89b3d9] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#759fca]">
-                <Sparkles className="h-4 w-4" />
-                Quét lại với AI nội bộ
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#89b3d9] px-5 py-3.5 text-sm font-semibold text-white hover:bg-[#759fca] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {isAnalyzing ? "Đang phân tích..." : "Chọn PNG/JPG để phân tích"}
               </button>
 
-              <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={() =>
+                  downloadTextFile(
+                    `ai-diagnosis-${selectedPatientUid || "patient"}.txt`,
+                    JSON.stringify(activeDiagnosis || { patient: selectedPatient }, null, 2)
+                  )
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
                 <Download className="h-4 w-4" />
-                Xuất dữ liệu thô (.DICOM)
+                Xuất dữ liệu thô
               </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
           </aside>
 
-          <div className="space-y-8 border-b border-slate-200 p-5 2xl:p-6 xl:border-b-0 xl:border-r">
+          <div className="space-y-8 border-b border-slate-200 p-6 xl:border-b-0 xl:border-r">
             <div className="space-y-5">
-              <SectionLabel>Lần quét hiện tại</SectionLabel>
-
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#8ca6c7]">
+                Current scan
+              </p>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-[34px] font-bold tracking-tight text-slate-900">Kết quả hiện tại</h1>
+                  <h1 className="text-[34px] font-bold tracking-tight text-slate-900">
+                    Kết quả hiện tại
+                  </h1>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                    Bản đọc tự động được tổng hợp từ ảnh đáy mắt gần nhất, đối chiếu với mốc lịch sử và chờ bác sĩ xác
-                    nhận để lưu vào bệnh án điện tử.
+                    {activeDiagnosis?.aiAnalysis ||
+                      "Ca AI sẽ hiển thị chi tiết kết quả tại đây ngay sau khi bạn chọn ảnh và gắn đúng bệnh nhân."}
                   </p>
                 </div>
-
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#95bee3] text-sm font-bold text-[#7ea9cf]">
-                  A1
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#95bee3] text-sm font-bold text-[#7ea9cf]">
+                  AI
                 </div>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <ResultCard
-                  eyebrow="Mức độ nguy cơ"
-                  title="Cảnh báo"
-                  value="0.94"
-                  helper="Cần can thiệp gấp trong 1.0 tháng để tránh tiến triển nhanh."
-                  accent="red"
-                />
-                <ResultCard
-                  eyebrow="Giai đoạn"
-                  title="Nhận định lâm sàng"
-                  value="G3"
-                  helper="NPDR tiền tăng sinh với nhiều vi phình mạch rải rác ở bán phần tư võng mạc."
-                  accent="blue"
-                />
-                <ResultCard
-                  eyebrow="Độ tin cậy"
-                  title="Đã xác thực"
-                  value="94.5%"
-                  helper="Hệ thống AI v2.4 đã đạt ngưỡng tin cậy để bác sĩ đối chiếu nhanh."
-                  accent="green"
-                />
+                {renderResultCard({
+                  eyebrow: "Risk score",
+                  value: activeDiagnosis?.aiScore || "--",
+                  title: activeDiagnosis?.riskLevel || "waiting",
+                  helper: activeDiagnosis
+                    ? "Cần đối chiếu lâm sàng và theo dõi sát."
+                    : "Chưa có kết quả AI.",
+                  accent: "red",
+                })}
+                {renderResultCard({
+                  eyebrow: "Giai đoạn",
+                  value: activeDiagnosis ? `G${toStageNumber(activeDiagnosis)}` : "--",
+                  title: activeDiagnosis?.stageLabel || "0-4 scale",
+                  helper: activeDiagnosis?.reportSummary || "Chưa có báo cáo tóm tắt.",
+                  accent: "blue",
+                })}
+                {renderResultCard({
+                  eyebrow: "Độ tin cậy",
+                  value: confidenceText,
+                  title: activeDiagnosis?.doctorApproved ? "verified" : "pending",
+                  helper: activeDiagnosis?.doctorApproved
+                    ? "Đã được bác sĩ phê duyệt."
+                    : "Chờ bác sĩ xác nhận.",
+                  accent: "green",
+                })}
               </div>
             </div>
 
             <div className="relative pl-8">
-              <span className="absolute left-[7px] top-2 h-3.5 w-3.5 rounded-full bg-[#95bee3] ring-8 ring-[#eef5fb]" />
-              <span className="absolute left-[13px] top-7 h-[calc(100%-14px)] w-px bg-[#d9e7f5]" />
+              <div className="absolute left-0 top-4 h-full w-px bg-[#d8e7f4]" />
+              <div className="absolute left-0 top-4 h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-[#8db7da]" />
 
-              <div className="rounded-[24px] border border-[#d8e7f4] bg-white p-6 shadow-[0_12px_30px_rgba(148,163,184,0.12)]">
+              <div className="rounded-[24px] border border-[#d8e7f4] bg-white p-5 shadow-[0_12px_30px_rgba(148,163,184,0.12)]">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-[#eaf3fb] px-3 py-1 text-xs font-bold text-[#7ea9cf]">
-                      24/05/2024
+                      {activeDiagnosis?.examDate || "Mới nhất"}
                     </span>
                     <span className="rounded-full bg-[#8db7da] px-3 py-1 text-xs font-bold text-white">
                       Lần chụp hiện tại
                     </span>
                   </div>
-
-                  <span className="text-xs font-medium text-slate-400">Bác sĩ: Nguyen V.</span>
+                  <span className="text-xs font-medium text-slate-400">
+                    Bác sĩ: {activeDiagnosis?.doctor?.displayName || "MedAssist"}
+                  </span>
                 </div>
 
                 <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50/70 p-5">
@@ -332,9 +720,8 @@ export function AiDiagnosisWorkspace() {
                     Báo cáo chẩn đoán gần nhất
                   </p>
                   <p className="mt-3 text-sm leading-7 text-slate-700">
-                    Phát hiện thấy có sự gia tăng các vi phình mạch (microaneurysms) rải rác ở bốn phần tư võng mạc.
-                    Có dấu hiệu xuất huyết dạng chấm và một số vùng thiếu máu cục bộ tại vùng cực hậu. NPDR giai đoạn
-                    3.
+                    {activeDiagnosis?.reportSummary ||
+                      "Chưa có tóm tắt báo cáo cho bệnh nhân này."}
                   </p>
                 </div>
               </div>
@@ -346,7 +733,7 @@ export function AiDiagnosisWorkspace() {
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">Nhận định chuyên gia</h2>
                   <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                    Bình luận & chế độ điều trị
+                    Bình luận và chế độ điều trị
                   </p>
                 </div>
               </div>
@@ -354,45 +741,45 @@ export function AiDiagnosisWorkspace() {
               <textarea
                 value={expertNote}
                 onChange={(event) => setExpertNote(event.target.value)}
-                placeholder="Nhập phác đồ điều trị so sánh..."
-                className="min-h-[265px] w-full rounded-[24px] border border-slate-200 bg-white px-5 py-4 text-sm leading-7 text-slate-700 outline-none transition-all placeholder:text-slate-300 focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
+                placeholder="Nhập nhận định của bác sĩ, hướng theo dõi hoặc điều trị..."
+                className="min-h-[260px] w-full rounded-[24px] border border-slate-200 bg-white px-5 py-4 text-sm leading-7 text-slate-700 outline-none focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
               />
             </div>
           </div>
 
-          <aside className="space-y-6 bg-[#fbfcfe] p-5 2xl:p-6">
-            <SectionLabel>Mốc đối chiếu</SectionLabel>
-
-            <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
-              <div className="max-w-[320px]">
-                <h2 className="text-[22px] font-bold tracking-tight text-slate-900">Lịch sử chẩn đoán</h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  Đối chiếu điểm AI với các mốc đã được bác sĩ xác nhận.
-                </p>
-              </div>
-
-              <div className="relative">
-                <select
-                  value={selectedReferenceId}
-                  onChange={(event) => setSelectedReferenceId(event.target.value)}
-                  className="appearance-none rounded-full border border-slate-200 bg-white py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
-                >
-                  {referenceSnapshots.map((snapshot) => (
-                    <option key={snapshot.id} value={snapshot.id}>
-                      {snapshot.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <aside className="space-y-6 bg-[#fbfcfe] p-6">
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#8ca6c7]">
+                Reference point
+              </p>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-[22px] font-bold tracking-tight text-slate-900">
+                  Lịch sử chẩn đoán
+                </h2>
+                <div className="relative min-w-[156px]">
+                  <select
+                    value={selectedReference?.id || ""}
+                    onChange={(event) => setSelectedReferenceId(event.target.value)}
+                    className="w-full appearance-none rounded-full border border-slate-200 bg-white py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
+                    disabled={!activeReferences.length}
+                  >
+                    {activeReferences.length ? (
+                      activeReferences.map((reference) => (
+                        <option key={reference.id} value={reference.id}>
+                          {reference.label}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Chưa có dữ liệu</option>
+                    )}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                </div>
               </div>
             </div>
 
-            <div className="rounded-[26px] border border-[#e2ebf5] bg-[#eef4fb] p-4">
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8ca6c7]">
-                Báo cáo chẩn đoán cũ
-              </p>
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <div className="rounded-[28px] border border-[#e2ebf5] bg-[#eef4fb] p-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
                 <div className="rounded-[22px] border border-slate-200 bg-white p-5">
                   <div className="mb-3 flex items-center gap-2 text-[#f0a032]">
                     <AlertTriangle className="h-4 w-4" />
@@ -400,67 +787,77 @@ export function AiDiagnosisWorkspace() {
                       Mức độ bệnh
                     </span>
                   </div>
-                  <p className="text-lg font-bold leading-8 text-[#ef8e18]">{selectedReference.diseaseLevel}</p>
+                  <p className="text-lg font-bold leading-8 text-[#ef8e18]">
+                    {selectedReference?.diseaseLevel || activeDiagnosis?.stageLabel || "Chưa có"}
+                  </p>
                 </div>
 
                 <div className="rounded-[22px] border border-slate-200 bg-white p-5">
-                  <div className="mb-4 flex items-center gap-2 text-[#8db7da]">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                      Độ chính xác AI (lúc đó)
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                    AI accuracy
+                  </p>
+                  <div className="mt-4 grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Điểm AI</p>
-                      <p className="mt-2 text-[34px] font-bold leading-none text-slate-800">{selectedReference.aiScore}</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                        AI score
+                      </p>
+                      <p className="mt-2 text-[30px] font-bold leading-none text-slate-800">
+                        {selectedReference?.aiScore || activeDiagnosis?.aiScore || "--"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Độ tin cậy
                       </p>
-                      <p className="mt-2 text-[34px] font-bold leading-none text-emerald-500">
-                        {selectedReference.confidence}
+                      <p className="mt-2 text-[30px] font-bold leading-none text-emerald-500">
+                        {selectedReference?.confidence || confidenceText}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-emerald-100">
-                    <div className="h-full w-[92%] rounded-full bg-emerald-500" />
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_28px_rgba(148,163,184,0.08)]">
-                <div className="mb-4 flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-[#8db7da]" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                    Lịch sử báo cáo do bác sĩ
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Lịch sử báo cáo của bác sĩ
+                </p>
+                <div className="mt-4 rounded-r-2xl border-l-4 border-[#d5e6f5] bg-slate-50/80 px-4 py-3">
+                  <p className="text-sm leading-7 text-slate-700">
+                    {selectedReference?.doctorNote ||
+                      expertNote ||
+                      "Chưa có nhận định bác sĩ cho mốc này."}
                   </p>
-                </div>
-
-                <div className="rounded-r-2xl border-l-4 border-[#d5e6f5] bg-slate-50/80 px-4 py-3">
-                  <p className="text-sm leading-7 text-slate-700">{selectedReference.doctorNote}</p>
-                </div>
-
-                <div className="mt-4 flex items-center gap-2 text-emerald-500">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-xs font-semibold">Đã được xác nhận lâm sàng</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-[20px] bg-[#121a2f] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-                <div className="flex aspect-[1.35/1] items-end justify-start bg-[radial-gradient(circle_at_50%_40%,rgba(34,44,70,0.42),transparent_38%),linear-gradient(180deg,#121a2f_0%,#11192c_100%)] p-3">
-                  <span className="rounded-md bg-black/50 px-2 py-1 text-[11px] font-semibold text-white">
-                    {selectedReference.archiveLabel}
-                  </span>
-                </div>
+              <div className="flex aspect-[1.25] items-center justify-center overflow-hidden rounded-[22px] bg-[#121a2f] p-3">
+                {activeDiagnosis?.archiveImagePath || currentImageUrl ? (
+                  <img
+                    src={activeDiagnosis?.archiveImagePath || currentImageUrl || ""}
+                    alt="Ảnh lưu trữ"
+                    className="h-full w-full object-contain object-center opacity-90"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+                    Ảnh gốc lưu trữ
+                  </div>
+                )}
               </div>
 
-              <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(
+                    activeDiagnosis?.archiveImagePath || currentImageUrl || "",
+                    "_blank",
+                    "noopener,noreferrer"
+                  )
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!activeDiagnosis?.archiveImagePath && !currentImageUrl}
+              >
                 <FolderOpen className="h-4 w-4" />
                 Phóng to ảnh cũ
               </button>
@@ -469,22 +866,39 @@ export function AiDiagnosisWorkspace() {
         </div>
 
         <div className="flex flex-col gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <button className="text-sm font-semibold text-slate-400 transition-colors hover:text-slate-600">
+          <button
+            type="button"
+            onClick={() => setExpertNote(activeDiagnosis?.doctorAdvice || "")}
+            className="text-sm font-semibold text-slate-400 hover:text-slate-600"
+          >
             Hủy phiên bản
           </button>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <button className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+            <button
+              type="button"
+              onClick={triggerBrowserPrint}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
               <Printer className="h-4 w-4" />
               In báo cáo
             </button>
-            <button className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600">
-              <CheckCircle2 className="h-4 w-4" />
-              Phê duyệt & Lưu Bệnh án
+            <button
+              type="button"
+              onClick={handleApproveReport}
+              disabled={!activeDiagnosis || isSavingReview}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingReview ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4" />
+              )}
+              {isSavingReview ? "Đang lưu..." : "Phê duyệt và lưu bệnh án"}
             </button>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

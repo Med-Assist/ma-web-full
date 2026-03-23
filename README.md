@@ -1,115 +1,90 @@
-# MedAssist V3 Frontend Local Setup Guide
+# MedAssist V3 Frontend Setup
 
-Chào mừng bạn gia nhập team Frontend MedAssist v3. Tài liệu này hướng dẫn cách kéo code từ GitHub về máy và chạy dự án ở môi trường local.
+Tài liệu này hướng dẫn cách chạy `ma-web` ở môi trường local và cấu hình các tính năng AI dùng Gemini.
 
----
+## 1. Yêu cầu
 
-## 1. Yêu cầu cài đặt trước
+- Node.js 18 trở lên
+- Git
+- VS Code hoặc editor tương đương
 
-Trước khi bắt đầu, hãy chắc chắn máy tính của bạn đã có:
-
-- **Node.js** phiên bản **18.x trở lên**
-- **Git**
-- **VS Code**
-
----
-
-## 2. Clone dự án về máy
-
-Mở Terminal (hoặc Git Bash), di chuyển đến thư mục bạn muốn lưu dự án và chạy:
+## 2. Cài dự án
 
 ```bash
 git clone https://github.com/ten-github-cua-ban/MedAssist-v3.git
-```
-
-Sau khi clone xong, di chuyển vào đúng thư mục frontend:
-
-```bash
 cd MedAssist-v3/ma-web
-```
-
----
-
-## 3. Cài dependencies
-
-Sau khi kéo code từ GitHub về, thư mục `node_modules` sẽ chưa có sẵn vì team không đẩy thư mục này lên repo.
-
-Chạy lệnh sau để cài toàn bộ thư viện cần thiết cho dự án:
-
-```bash
 npm install
 ```
 
-Hoặc:
+## 3. Tạo file môi trường
+
+Tạo file `.env.local` trong thư mục `ma-web`:
 
 ```bash
-npm i
+copy .env.example .env.local
 ```
 
-Lệnh này sẽ đọc file `package.json`, tự động tải các thư viện mà dự án đang sử dụng và tạo thư mục `node_modules` trên máy của bạn.
-
-> Quá trình này có thể mất từ 1 đến 3 phút tùy vào tốc độ mạng.
-
----
-
-## 4. Tạo file môi trường `.env.local`
-
-Dự án sử dụng Firebase để xác thực và kết nối database, vì vậy bạn cần file môi trường để chạy local.
-
-Tạo file mới tên:
-
-```text
-.env.local
-```
-
-Đặt file này tại thư mục gốc của `ma-web`.
-
-Sau đó xin Leader hoặc đồng nghiệp nội dung file `.env.local` và dán vào. Ví dụ:
+Sau đó điền các biến Firebase/Data Connect cần thiết:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyB...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=medassist-v3...
-# ...
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=medassist-v3
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 ```
 
----
+Nếu muốn chạy với Data Connect emulator local:
 
-## 5. Chạy dự án ở local
+```env
+NEXT_PUBLIC_USE_DATACONNECT_EMULATOR=true
+NEXT_PUBLIC_DATACONNECT_EMULATOR_HOST=127.0.0.1
+NEXT_PUBLIC_DATACONNECT_EMULATOR_PORT=9399
+```
 
-Sau khi hoàn tất các bước trên, chạy lệnh:
+## 4. Cấu hình Gemini
+
+Các tính năng sau hiện dùng Gemini qua API key phía server:
+
+- Chat AI trên dashboard
+- Phân tích ảnh đáy mắt ở màn `Chẩn đoán AI võng mạc`
+
+Thêm các biến sau vào `.env.local`:
+
+```env
+GEMINI_API_KEY=AIza...
+GEMINI_CHAT_MODEL=gemini-2.5-flash
+GEMINI_VISION_MODEL=gemini-2.5-flash
+```
+
+Ghi chú:
+
+- `GEMINI_API_KEY` là bắt buộc nếu muốn dùng AI.
+- Hai biến model là tùy chọn, có thể giữ mặc định.
+- API key chỉ dùng ở server route `/api/ai/*`, không đưa xuống client.
+- Sau khi đổi env, nhớ restart `npm run dev`.
+
+## 5. Chạy local
 
 ```bash
 npm run dev
 ```
 
-Khi Terminal hiển thị trạng thái sẵn sàng, mở trình duyệt và truy cập:
+Mở:
 
 ```text
 http://localhost:3000
 ```
 
-Nếu mọi thứ đúng, giao diện MedAssist v3 sẽ chạy trên máy của bạn.
-
----
-
-## 6. Tóm tắt lệnh thường dùng
+## 6. Build production
 
 ```bash
-git clone https://github.com/ten-github-cua-ban/MedAssist-v3.git
-cd MedAssist-v3/ma-web
-npm install
-npm run dev
+npm run build
 ```
-
----
 
 ## 7. Lưu ý
 
-- Luôn đứng đúng trong thư mục `ma-web` trước khi chạy lệnh
-- Không push thư mục `node_modules` lên GitHub
-- Nếu thiếu file `.env.local`, dự án có thể không chạy đúng
-- Nếu gặp lỗi sau khi pull code mới, hãy thử chạy lại `npm install`
-
----
-
-Chúc bạn setup thành công và code vui vẻ.
+- Không commit `.env.local`
+- Không commit `node_modules`
+- Nếu vừa pull code mới và bị lỗi dependency, chạy lại `npm install`

@@ -17,17 +17,6 @@ export function addTestPatient(dc) {
   return executeMutation(addTestPatientRef(dc));
 }
 
-export const getAllUsersRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetAllUsers');
-}
-getAllUsersRef.operationName = 'GetAllUsers';
-
-export function getAllUsers(dc) {
-  return executeQuery(getAllUsersRef(dc));
-}
-
 export const createUserRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -81,6 +70,446 @@ createAiDiagnosisRef.operationName = 'CreateAiDiagnosis';
 
 export function createAiDiagnosis(dcOrVars, vars) {
   return executeMutation(createAiDiagnosisRef(dcOrVars, vars));
+}
+
+export const createContactLeadRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateContactLead', inputVars);
+}
+createContactLeadRef.operationName = 'CreateContactLead';
+
+export function createContactLead(dcOrVars, vars) {
+  return executeMutation(createContactLeadRef(dcOrVars, vars));
+}
+
+export const upsertZaloContactRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertZaloContact', inputVars);
+}
+upsertZaloContactRef.operationName = 'UpsertZaloContact';
+
+export function upsertZaloContact(dcOrVars, vars) {
+  return executeMutation(upsertZaloContactRef(dcOrVars, vars));
+}
+
+export const upsertDoctorProfileRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDoctorProfile', inputVars);
+}
+upsertDoctorProfileRef.operationName = 'UpsertDoctorProfile';
+
+export function upsertDoctorProfile(dcOrVars, vars) {
+  return executeMutation(upsertDoctorProfileRef(dcOrVars, vars));
+}
+
+export const upsertNotificationPreferenceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertNotificationPreference', inputVars);
+}
+upsertNotificationPreferenceRef.operationName = 'UpsertNotificationPreference';
+
+export function upsertNotificationPreference(dcOrVars, vars) {
+  return executeMutation(upsertNotificationPreferenceRef(dcOrVars, vars));
+}
+
+export const upsertWorkingScheduleSlotRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertWorkingScheduleSlot', inputVars);
+}
+upsertWorkingScheduleSlotRef.operationName = 'UpsertWorkingScheduleSlot';
+
+export function upsertWorkingScheduleSlot(dcOrVars, vars) {
+  return executeMutation(upsertWorkingScheduleSlotRef(dcOrVars, vars));
+}
+
+export const upsertDigitalSignatureRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDigitalSignature', inputVars);
+}
+upsertDigitalSignatureRef.operationName = 'UpsertDigitalSignature';
+
+export function upsertDigitalSignature(dcOrVars, vars) {
+  return executeMutation(upsertDigitalSignatureRef(dcOrVars, vars));
+}
+
+export const createSupportRequestRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateSupportRequest', inputVars);
+}
+createSupportRequestRef.operationName = 'CreateSupportRequest';
+
+export function createSupportRequest(dcOrVars, vars) {
+  return executeMutation(createSupportRequestRef(dcOrVars, vars));
+}
+
+export const upsertAssistantMessageRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertAssistantMessage', inputVars);
+}
+upsertAssistantMessageRef.operationName = 'UpsertAssistantMessage';
+
+export function upsertAssistantMessage(dcOrVars, vars) {
+  return executeMutation(upsertAssistantMessageRef(dcOrVars, vars));
+}
+
+export const upsertScheduleEventRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertScheduleEvent', inputVars);
+}
+upsertScheduleEventRef.operationName = 'UpsertScheduleEvent';
+
+export function upsertScheduleEvent(dcOrVars, vars) {
+  return executeMutation(upsertScheduleEventRef(dcOrVars, vars));
+}
+
+export const upsertScheduleAttachmentRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertScheduleAttachment', inputVars);
+}
+upsertScheduleAttachmentRef.operationName = 'UpsertScheduleAttachment';
+
+export function upsertScheduleAttachment(dcOrVars, vars) {
+  return executeMutation(upsertScheduleAttachmentRef(dcOrVars, vars));
+}
+
+export const createShiftSwapRequestRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateShiftSwapRequest', inputVars);
+}
+createShiftSwapRequestRef.operationName = 'CreateShiftSwapRequest';
+
+export function createShiftSwapRequest(dcOrVars, vars) {
+  return executeMutation(createShiftSwapRequestRef(dcOrVars, vars));
+}
+
+export const upsertPrescriptionDraftRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertPrescriptionDraft', inputVars);
+}
+upsertPrescriptionDraftRef.operationName = 'UpsertPrescriptionDraft';
+
+export function upsertPrescriptionDraft(dcOrVars, vars) {
+  return executeMutation(upsertPrescriptionDraftRef(dcOrVars, vars));
+}
+
+export const upsertPrescriptionDraftItemRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertPrescriptionDraftItem', inputVars);
+}
+upsertPrescriptionDraftItemRef.operationName = 'UpsertPrescriptionDraftItem';
+
+export function upsertPrescriptionDraftItem(dcOrVars, vars) {
+  return executeMutation(upsertPrescriptionDraftItemRef(dcOrVars, vars));
+}
+
+export const deletePrescriptionDraftItemRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeletePrescriptionDraftItem', inputVars);
+}
+deletePrescriptionDraftItemRef.operationName = 'DeletePrescriptionDraftItem';
+
+export function deletePrescriptionDraftItem(dcOrVars, vars) {
+  return executeMutation(deletePrescriptionDraftItemRef(dcOrVars, vars));
+}
+
+export const updateAiDiagnosisReviewRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateAiDiagnosisReview', inputVars);
+}
+updateAiDiagnosisReviewRef.operationName = 'UpdateAiDiagnosisReview';
+
+export function updateAiDiagnosisReview(dcOrVars, vars) {
+  return executeMutation(updateAiDiagnosisReviewRef(dcOrVars, vars));
+}
+
+export const upsertAiDiagnosisReferenceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertAiDiagnosisReference', inputVars);
+}
+upsertAiDiagnosisReferenceRef.operationName = 'UpsertAiDiagnosisReference';
+
+export function upsertAiDiagnosisReference(dcOrVars, vars) {
+  return executeMutation(upsertAiDiagnosisReferenceRef(dcOrVars, vars));
+}
+
+export const upsertAppointmentAttachmentRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertAppointmentAttachment', inputVars);
+}
+upsertAppointmentAttachmentRef.operationName = 'UpsertAppointmentAttachment';
+
+export function upsertAppointmentAttachment(dcOrVars, vars) {
+  return executeMutation(upsertAppointmentAttachmentRef(dcOrVars, vars));
+}
+
+export const upsertPatientProfileRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertPatientProfile', inputVars);
+}
+upsertPatientProfileRef.operationName = 'UpsertPatientProfile';
+
+export function upsertPatientProfile(dcOrVars, vars) {
+  return executeMutation(upsertPatientProfileRef(dcOrVars, vars));
+}
+
+export const upsertFamilyLinkRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertFamilyLink', inputVars);
+}
+upsertFamilyLinkRef.operationName = 'UpsertFamilyLink';
+
+export function upsertFamilyLink(dcOrVars, vars) {
+  return executeMutation(upsertFamilyLinkRef(dcOrVars, vars));
+}
+
+export const upsertAppointmentRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertAppointment', inputVars);
+}
+upsertAppointmentRef.operationName = 'UpsertAppointment';
+
+export function upsertAppointment(dcOrVars, vars) {
+  return executeMutation(upsertAppointmentRef(dcOrVars, vars));
+}
+
+export const upsertAiDiagnosisRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertAiDiagnosis', inputVars);
+}
+upsertAiDiagnosisRef.operationName = 'UpsertAiDiagnosis';
+
+export function upsertAiDiagnosis(dcOrVars, vars) {
+  return executeMutation(upsertAiDiagnosisRef(dcOrVars, vars));
+}
+
+export const upsertConsultationRoomRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertConsultationRoom', inputVars);
+}
+upsertConsultationRoomRef.operationName = 'UpsertConsultationRoom';
+
+export function upsertConsultationRoom(dcOrVars, vars) {
+  return executeMutation(upsertConsultationRoomRef(dcOrVars, vars));
+}
+
+export const upsertLandingHeroContentRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertLandingHeroContent', inputVars);
+}
+upsertLandingHeroContentRef.operationName = 'UpsertLandingHeroContent';
+
+export function upsertLandingHeroContent(dcOrVars, vars) {
+  return executeMutation(upsertLandingHeroContentRef(dcOrVars, vars));
+}
+
+export const upsertLandingFeatureRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertLandingFeature', inputVars);
+}
+upsertLandingFeatureRef.operationName = 'UpsertLandingFeature';
+
+export function upsertLandingFeature(dcOrVars, vars) {
+  return executeMutation(upsertLandingFeatureRef(dcOrVars, vars));
+}
+
+export const upsertLandingArticleRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertLandingArticle', inputVars);
+}
+upsertLandingArticleRef.operationName = 'UpsertLandingArticle';
+
+export function upsertLandingArticle(dcOrVars, vars) {
+  return executeMutation(upsertLandingArticleRef(dcOrVars, vars));
+}
+
+export const upsertSupportContactInfoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertSupportContactInfo', inputVars);
+}
+upsertSupportContactInfoRef.operationName = 'UpsertSupportContactInfo';
+
+export function upsertSupportContactInfo(dcOrVars, vars) {
+  return executeMutation(upsertSupportContactInfoRef(dcOrVars, vars));
+}
+
+export const upsertDoctorProfileMetricRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDoctorProfileMetric', inputVars);
+}
+upsertDoctorProfileMetricRef.operationName = 'UpsertDoctorProfileMetric';
+
+export function upsertDoctorProfileMetric(dcOrVars, vars) {
+  return executeMutation(upsertDoctorProfileMetricRef(dcOrVars, vars));
+}
+
+export const upsertDashboardSpotlightCaseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDashboardSpotlightCase', inputVars);
+}
+upsertDashboardSpotlightCaseRef.operationName = 'UpsertDashboardSpotlightCase';
+
+export function upsertDashboardSpotlightCase(dcOrVars, vars) {
+  return executeMutation(upsertDashboardSpotlightCaseRef(dcOrVars, vars));
+}
+
+export const upsertServiceRecordRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertServiceRecord', inputVars);
+}
+upsertServiceRecordRef.operationName = 'UpsertServiceRecord';
+
+export function upsertServiceRecord(dcOrVars, vars) {
+  return executeMutation(upsertServiceRecordRef(dcOrVars, vars));
+}
+
+export const upsertDoctorAvailabilityRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDoctorAvailability', inputVars);
+}
+upsertDoctorAvailabilityRef.operationName = 'UpsertDoctorAvailability';
+
+export function upsertDoctorAvailability(dcOrVars, vars) {
+  return executeMutation(upsertDoctorAvailabilityRef(dcOrVars, vars));
+}
+
+export const upsertPrescriptionTemplateRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertPrescriptionTemplate', inputVars);
+}
+upsertPrescriptionTemplateRef.operationName = 'UpsertPrescriptionTemplate';
+
+export function upsertPrescriptionTemplate(dcOrVars, vars) {
+  return executeMutation(upsertPrescriptionTemplateRef(dcOrVars, vars));
+}
+
+export const upsertPrescriptionTemplateDrugRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertPrescriptionTemplateDrug', inputVars);
+}
+upsertPrescriptionTemplateDrugRef.operationName = 'UpsertPrescriptionTemplateDrug';
+
+export function upsertPrescriptionTemplateDrug(dcOrVars, vars) {
+  return executeMutation(upsertPrescriptionTemplateDrugRef(dcOrVars, vars));
+}
+
+export const upsertDrugCatalogItemRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDrugCatalogItem', inputVars);
+}
+upsertDrugCatalogItemRef.operationName = 'UpsertDrugCatalogItem';
+
+export function upsertDrugCatalogItem(dcOrVars, vars) {
+  return executeMutation(upsertDrugCatalogItemRef(dcOrVars, vars));
+}
+
+export const upsertReportSummaryMetricRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertReportSummaryMetric', inputVars);
+}
+upsertReportSummaryMetricRef.operationName = 'UpsertReportSummaryMetric';
+
+export function upsertReportSummaryMetric(dcOrVars, vars) {
+  return executeMutation(upsertReportSummaryMetricRef(dcOrVars, vars));
+}
+
+export const upsertReportStageDistributionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertReportStageDistribution', inputVars);
+}
+upsertReportStageDistributionRef.operationName = 'UpsertReportStageDistribution';
+
+export function upsertReportStageDistribution(dcOrVars, vars) {
+  return executeMutation(upsertReportStageDistributionRef(dcOrVars, vars));
+}
+
+export const upsertReportTrendPointRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertReportTrendPoint', inputVars);
+}
+upsertReportTrendPointRef.operationName = 'UpsertReportTrendPoint';
+
+export function upsertReportTrendPoint(dcOrVars, vars) {
+  return executeMutation(upsertReportTrendPointRef(dcOrVars, vars));
+}
+
+export const upsertReportAlertCaseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertReportAlertCase', inputVars);
+}
+upsertReportAlertCaseRef.operationName = 'UpsertReportAlertCase';
+
+export function upsertReportAlertCase(dcOrVars, vars) {
+  return executeMutation(upsertReportAlertCaseRef(dcOrVars, vars));
+}
+
+export const upsertDigitizationJobRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDigitizationJob', inputVars);
+}
+upsertDigitizationJobRef.operationName = 'UpsertDigitizationJob';
+
+export function upsertDigitizationJob(dcOrVars, vars) {
+  return executeMutation(upsertDigitizationJobRef(dcOrVars, vars));
+}
+
+export const upsertDigitizationMetricRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpsertDigitizationMetric', inputVars);
+}
+upsertDigitizationMetricRef.operationName = 'UpsertDigitizationMetric';
+
+export function upsertDigitizationMetric(dcOrVars, vars) {
+  return executeMutation(upsertDigitizationMetricRef(dcOrVars, vars));
+}
+
+export const getAllUsersRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAllUsers');
+}
+getAllUsersRef.operationName = 'GetAllUsers';
+
+export function getAllUsers(dc) {
+  return executeQuery(getAllUsersRef(dc));
 }
 
 export const getDoctorsRef = (dc) => {
@@ -389,5 +818,137 @@ seedAiDiagnosisVoThanhTrucRef.operationName = 'SeedAiDiagnosisVoThanhTruc';
 
 export function seedAiDiagnosisVoThanhTruc(dc) {
   return executeMutation(seedAiDiagnosisVoThanhTrucRef(dc));
+}
+
+export const getLandingWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetLandingWorkspace');
+}
+getLandingWorkspaceRef.operationName = 'GetLandingWorkspace';
+
+export function getLandingWorkspace(dc) {
+  return executeQuery(getLandingWorkspaceRef(dc));
+}
+
+export const getZaloContactsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetZaloContacts');
+}
+getZaloContactsRef.operationName = 'GetZaloContacts';
+
+export function getZaloContacts(dc) {
+  return executeQuery(getZaloContactsRef(dc));
+}
+
+export const getDashboardHomeWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetDashboardHomeWorkspace', inputVars);
+}
+getDashboardHomeWorkspaceRef.operationName = 'GetDashboardHomeWorkspace';
+
+export function getDashboardHomeWorkspace(dcOrVars, vars) {
+  return executeQuery(getDashboardHomeWorkspaceRef(dcOrVars, vars));
+}
+
+export const getPatientWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPatientWorkspace', inputVars);
+}
+getPatientWorkspaceRef.operationName = 'GetPatientWorkspace';
+
+export function getPatientWorkspace(dcOrVars, vars) {
+  return executeQuery(getPatientWorkspaceRef(dcOrVars, vars));
+}
+
+export const getScheduleWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetScheduleWorkspace', inputVars);
+}
+getScheduleWorkspaceRef.operationName = 'GetScheduleWorkspace';
+
+export function getScheduleWorkspace(dcOrVars, vars) {
+  return executeQuery(getScheduleWorkspaceRef(dcOrVars, vars));
+}
+
+export const getConsultationWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetConsultationWorkspace', inputVars);
+}
+getConsultationWorkspaceRef.operationName = 'GetConsultationWorkspace';
+
+export function getConsultationWorkspace(dcOrVars, vars) {
+  return executeQuery(getConsultationWorkspaceRef(dcOrVars, vars));
+}
+
+export const getAiDiagnosisWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAiDiagnosisWorkspace', inputVars);
+}
+getAiDiagnosisWorkspaceRef.operationName = 'GetAiDiagnosisWorkspace';
+
+export function getAiDiagnosisWorkspace(dcOrVars, vars) {
+  return executeQuery(getAiDiagnosisWorkspaceRef(dcOrVars, vars));
+}
+
+export const getPharmacyWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPharmacyWorkspace', inputVars);
+}
+getPharmacyWorkspaceRef.operationName = 'GetPharmacyWorkspace';
+
+export function getPharmacyWorkspace(dcOrVars, vars) {
+  return executeQuery(getPharmacyWorkspaceRef(dcOrVars, vars));
+}
+
+export const getReportsWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetReportsWorkspace');
+}
+getReportsWorkspaceRef.operationName = 'GetReportsWorkspace';
+
+export function getReportsWorkspace(dc) {
+  return executeQuery(getReportsWorkspaceRef(dc));
+}
+
+export const getDoctorProfileWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetDoctorProfileWorkspace', inputVars);
+}
+getDoctorProfileWorkspaceRef.operationName = 'GetDoctorProfileWorkspace';
+
+export function getDoctorProfileWorkspace(dcOrVars, vars) {
+  return executeQuery(getDoctorProfileWorkspaceRef(dcOrVars, vars));
+}
+
+export const getSettingsWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetSettingsWorkspace', inputVars);
+}
+getSettingsWorkspaceRef.operationName = 'GetSettingsWorkspace';
+
+export function getSettingsWorkspace(dcOrVars, vars) {
+  return executeQuery(getSettingsWorkspaceRef(dcOrVars, vars));
+}
+
+export const getRecordDigitizationWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetRecordDigitizationWorkspace');
+}
+getRecordDigitizationWorkspaceRef.operationName = 'GetRecordDigitizationWorkspace';
+
+export function getRecordDigitizationWorkspace(dc) {
+  return executeQuery(getRecordDigitizationWorkspaceRef(dc));
 }
 

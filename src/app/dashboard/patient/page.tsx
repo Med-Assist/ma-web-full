@@ -1,9 +1,9 @@
-import { PatientFeature } from '@/features/patient/PatientFeature';
-import { Metadata } from 'next';
+import type { Metadata } from "next";
+import { PatientFeature } from "@/features/patient/PatientFeature";
 
 export const metadata: Metadata = {
-  title: 'Quản lý Bệnh nhân | MedAssist',
-  description: 'Danh sách và hồ sơ bệnh nhân',
+  title: "Hồ sơ bệnh nhân | MedAssist",
+  description: "Quản lý hồ sơ bệnh nhân, BHYT và thông tin theo dõi cơ bản.",
 };
 
 export default function PatientPage() {

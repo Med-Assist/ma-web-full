@@ -1,45 +1,55 @@
 "use client";
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Printer, Calendar, User, Activity, FileText } from 'lucide-react';
-import { useState } from 'react';
-import { InvoiceModel } from './InvoiceModel'; 
 
-interface ServiceRecord {
+import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Printer, Calendar, User, Activity, FileText } from "lucide-react";
+import { InvoiceLineItem, InvoiceModel } from "./InvoiceModel";
+
+export type ServiceRecord = {
   id: string;
-  name: string;
+  serviceName: string;
   specialty: string;
-  doctor: string;
-  dateTime: string;
+  doctorName: string;
+  dateTimeLabel: string;
   diagnosis: string;
-}
-
-const mockServices: ServiceRecord[] = [
-  {
-    id: '1',
-    name: 'Siêu âm tim màu',
-    specialty: 'Khoa Tim mạch',
-    doctor: 'BS. Danh Nguyễn',
-    dateTime: '09:00 - 15/03/2026',
-    diagnosis: 'Hở van tim 2 lá nhẹ. Huyết động ổn định. Đề nghị theo dõi thêm và tái khám sau 3 tháng.'
-  },
-  {
-    id: '2',
-    name: 'Xét nghiệm máu sinh hóa',
-    specialty: 'Khoa Xét nghiệm',
-    doctor: 'BS. Trần Thị B',
-    dateTime: '08:30 - 15/03/2026',
-    diagnosis: 'Các chỉ số cơ bản trong mức bình thường. Cholesterol hơi cao (5.2 mmol/L).'
-  }
-];
+  quantity: number;
+  unitPrice: number;
+  insuranceCoveragePercent: number;
+};
 
 interface ServiceDetailsModelProps {
   isOpen: boolean;
   onClose: () => void;
+  patientName: string;
+  serviceRecords: ServiceRecord[];
 }
 
-export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProps) {
+export function ServiceDetailsModel({
+  isOpen,
+  onClose,
+  patientName,
+  serviceRecords,
+}: ServiceDetailsModelProps) {
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+
+  const invoiceCode = useMemo(() => `INV-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`, []);
+  const printedAt = useMemo(
+    () =>
+      new Date().toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+    []
+  );
+
+  const invoiceItems: InvoiceLineItem[] = serviceRecords.map((record) => ({
+    id: record.id,
+    serviceName: record.serviceName,
+    quantity: record.quantity,
+    unitPrice: record.unitPrice,
+    insuranceCoveragePercent: record.insuranceCoveragePercent,
+  }));
 
   return (
     <AnimatePresence>
@@ -57,69 +67,76 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-4">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-slate-800">
                 Chi tiết dịch vụ bệnh nhân:
-                <span className="font-semibold text-blue-700 bg-blue-100 px-3 py-0.5 rounded-full text-sm">
-                  James Dalton
+                <span className="rounded-full bg-blue-100 px-3 py-0.5 text-sm font-semibold text-blue-700">
+                  {patientName}
                 </span>
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+                className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50/50">
-              {mockServices.map((service) => (
-                <div key={service.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3 mb-4 border-b border-slate-100 pb-4">
-                    <div className="p-2 bg-blue-50 text-[#35678E] rounded-lg">
+            <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50/50 p-6">
+              {serviceRecords.map((service) => (
+                <div
+                  key={service.id}
+                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="mb-4 flex items-start gap-3 border-b border-slate-100 pb-4">
+                    <div className="rounded-lg bg-blue-50 p-2 text-[#35678E]">
                       <Activity size={24} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-800 text-lg">{service.name}</h3>
-                      <p className="text-sm text-[#35678E] font-medium mt-0.5">{service.specialty}</p>
+                      <h3 className="text-lg font-bold text-slate-800">{service.serviceName}</h3>
+                      <p className="mt-0.5 text-sm font-medium text-[#35678E]">{service.specialty}</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 mb-4">
+                  <div className="mb-4 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <User size={16} className="text-slate-400" />
-                      <span><span className="text-slate-400">Thực hiện:</span> {service.doctor}</span>
+                      <span>
+                        <span className="text-slate-400">Thực hiện:</span> {service.doctorName}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <Calendar size={16} className="text-slate-400" />
-                      <span>{service.dateTime}</span>
+                      <span>{service.dateTimeLabel}</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 rounded-lg p-3.5 border border-slate-100 flex items-start gap-2.5">
-                    <FileText size={18} className="text-[#35678E] mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50 p-3.5">
+                    <FileText size={18} className="mt-0.5 shrink-0 text-[#35678E]" />
                     <div>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Chẩn đoán / Kết luận</span>
-                      <p className="text-sm text-slate-700 font-medium leading-relaxed">{service.diagnosis}</p>
+                      <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Chẩn đoán / Kết luận
+                      </span>
+                      <p className="text-sm font-medium leading-relaxed text-slate-700">{service.diagnosis}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 Đóng
               </button>
               <button
                 onClick={() => setIsInvoiceOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#35678E] to-[#8BB4DC] rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#35678E] to-[#8BB4DC] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
               >
                 <Printer size={18} /> In báo cáo
               </button>
@@ -128,9 +145,13 @@ export function ServiceDetailsModel({ isOpen, onClose }: ServiceDetailsModelProp
         </div>
       )}
 
-      <InvoiceModel 
-        isOpen={isInvoiceOpen} 
-        onClose={() => setIsInvoiceOpen(false)} 
+      <InvoiceModel
+        isOpen={isInvoiceOpen}
+        onClose={() => setIsInvoiceOpen(false)}
+        patientName={patientName}
+        invoiceCode={invoiceCode}
+        printedAt={printedAt}
+        serviceRecords={invoiceItems}
       />
     </AnimatePresence>
   );

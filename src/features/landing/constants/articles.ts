@@ -1,48 +1,42 @@
-import { Stethoscope, Eye, Activity, FileText } from 'lucide-react';
-
 export const ARTICLES = [
   {
-    id: 1,
-    title: '7 triệu người Việt mắc đái tháo đường',
-    excerpt: 'Hơn 50% người mắc bệnh chưa được chẩn đoán, tạo ra "tảng băng chìm" biến chứng võng mạc nguy hiểm.',
-    content: 'Việt Nam có khoảng 7 triệu người bị đái tháo đường, nhưng đến một nửa số đó không biết mình mắc bệnh. 55% người bệnh đái tháo đường gặp biến chứng, gồm 34% biến chứng về tim mạch, 39% mắt và thần kinh, 24% thận.',
-    link: 'https://suckhoedoisong.vn/7-trieu-nguoi-viet-bi-dai-thao-duong-co-nhung-benh-nhan-moi-14-15-tuoi-169251018145503945.htm',
-    icon: Stethoscope,
-    image: '/article2.png', 
-    color: 'text-cyan-400',
-    bg: 'bg-[#151C2C]'
+    id: "landing-article-1",
+    title: "Tầm soát bệnh võng mạc bằng AI trong khám định kỳ",
+    excerpt: "AI hỗ trợ bác sĩ phát hiện sớm dấu hiệu bất thường và ưu tiên ca nguy cơ cao nhanh hơn.",
+    content:
+      "Mô hình AI trong MedAssist được thiết kế để hỗ trợ sàng lọc ban đầu, giúp bác sĩ rút ngắn thời gian xem ảnh và tập trung vào những ca cần xử lý trước. Dữ liệu sau đó vẫn được đưa về quy trình chuyên môn để xác nhận lâm sàng.",
+    link: "https://medassist.vn/ai-screening",
+    image: "/article1.png",
+    icon: "stethoscope",
   },
   {
-    id: 2,
-    title: 'Nguy cơ mù lòa hàng đầu hiện nay',
-    excerpt: 'Võng mạc tiểu đường là nguyên nhân chính gây mất thị lực ở tuổi lao động; 90% ca có thể phòng tránh.',
-    content: 'Hiện nay số lượng bệnh nhân mắc tiểu đường (đái tháo đường) đang ngày càng gia tăng. Dự tính đến năm 2030, cả thế giới sẽ có hơn 500 triệu người mắc tiểu đường. Bệnh tiểu đường là nguyên nhân hàng đầu gây mù lòa ở người lớn tuổi.',
-    link: 'https://www.vinmec.com/vie/bai-viet/vong-mac-tieu-duong-la-gi-nguyen-nhan-va-nhung-anh-huong-cua-benh-vong-mac-tieu-duong-vi',
-    icon: Eye,
-    image: '/article3.png',
-    color: 'text-cyan-400',
-    bg: 'bg-[#151C2C]'
+    id: "landing-article-2",
+    title: "Chuẩn hóa hồ sơ khám mắt trên một luồng dữ liệu thống nhất",
+    excerpt: "Hồ sơ, lịch hẹn, chẩn đoán và toa thuốc được liên kết để giảm nhập liệu lặp lại.",
+    content:
+      "Khi mọi thao tác cùng đi qua Data Connect, đội ngũ có thể đồng bộ dữ liệu giữa web và ứng dụng di động, hạn chế sai lệch trạng thái và dễ mở rộng backend cho các quy trình điều trị về sau.",
+    link: "https://medassist.vn/unified-record",
+    image: "/article2.png",
+    icon: "file",
   },
   {
-    id: 3,
-    title: 'Đột phá AI trong tầm soát mắt',
-    excerpt: 'Ứng dụng trí tuệ nhân tạo (AI) giúp chẩn đoán chính xác tổn thương đáy mắt cho hàng chục nghìn người.',
-    content: 'Với sự ra đời...',
-    link: 'https://thongke.cesti.gov.vn/an-pham-thong-ke/thong-tin-chuyen-de-khoa-hoc-cong-nghe-va-doi-moi-sang-tao/1052-nghien-cuu-ung-dung-tri-tue-nhan-tao-phat-hien-som-benh-mat', 
-    icon: Activity,
-    image: '/article4.png', 
-    color: 'text-cyan-400',
-    bg: 'bg-[#151C2C]'
+    id: "landing-article-3",
+    title: "Theo dõi tiến triển điều trị bằng dashboard thời gian thực",
+    excerpt: "Báo cáo trực quan giúp bác sĩ và quản trị viên nhìn thấy xu hướng điều trị rõ hơn.",
+    content:
+      "Dashboard tổng hợp dữ liệu từ lịch hẹn, kết quả AI, đơn thuốc và thanh toán để tạo nên một bức tranh thống nhất cho vận hành phòng khám. Đây là nền tảng quan trọng để tối ưu quy trình chăm sóc bệnh nhân.",
+    link: "https://medassist.vn/realtime-dashboard",
+    image: "/article3.png",
+    icon: "activity",
   },
   {
-    id: 4,
-    title: 'Bài toán nhân lực y tế cơ sở',
-    excerpt: 'Sự thiếu hụt bác sĩ chuyên khoa tại tuyến huyện, xã là "nút thắt" lớn trong việc chăm sóc sức khỏe.',
-    content: 'Các địa phương miền núi, vùng sâu, vùng xa rất thiếu nhân lực y tế nhưng lại gặp khó khăn trong việc đào tạo và giữ chân nhân viên y tế. Ít sinh viên y khoa muốn về công tác tại tuyến huyện, xã do điều kiện làm việc khó khăn, ít cơ hội phát triển.',
-    link: 'https://laodong.vn/suc-khoe/nhieu-chinh-sach-uu-dai-tuyen-co-so-van-thieu-hut-y-bac-si-1467677.ldo',
-    icon: FileText,
-    image: '/article5.png', 
-    color: 'text-cyan-400',
-    bg: 'bg-[#151C2C]'
-  }
-];
+    id: "landing-article-4",
+    title: "Tư vấn từ xa và phối hợp điều trị liên phòng ban",
+    excerpt: "Luồng consultation số giúp bác sĩ phối hợp nhanh ngay cả khi không cùng một điểm khám.",
+    content:
+      "MedAssist cho phép ghi nhận nội dung tư vấn, hẹn tái khám và chuyển tiếp thông tin cho các bộ phận liên quan trên cùng một nguồn dữ liệu. Điều này giúp giảm độ trễ khi chăm sóc bệnh nhân cần theo dõi liên tục.",
+    link: "https://medassist.vn/tele-consultation",
+    image: "/article4.png",
+    icon: "eye",
+  },
+] as const;

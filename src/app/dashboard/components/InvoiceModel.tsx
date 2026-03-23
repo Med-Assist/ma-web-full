@@ -1,14 +1,70 @@
 "use client";
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Printer, Download } from 'lucide-react';
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Download, Printer, X } from "lucide-react";
+import { triggerBrowserPrint } from "@/shared/lib/medassist-runtime";
+
+export type InvoiceLineItem = {
+  id: string;
+  serviceName: string;
+  quantity: number;
+  unitPrice: number;
+  insuranceCoveragePercent: number;
+};
 
 interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  patientName: string;
+  invoiceCode: string;
+  printedAt: string;
+  serviceRecords: InvoiceLineItem[];
 }
 
-export function InvoiceModel({ isOpen, onClose }: InvoiceModalProps) {
+export function InvoiceModel({
+  isOpen,
+  onClose,
+  patientName,
+  invoiceCode,
+  printedAt,
+  serviceRecords,
+}: InvoiceModalProps) {
+  const totalCost = serviceRecords.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const coverageRate = serviceRecords[0]?.insuranceCoveragePercent ?? 0;
+  const insurancePaid = Math.round((totalCost * coverageRate) / 100);
+  const patientPaid = totalCost - insurancePaid;
+
+  const handleDownloadPdf = async () => {
+    const { jsPDF } = await import("jspdf/dist/jspdf.es.min.js");
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("MedAssist Invoice", 20, 20);
+    doc.setFontSize(11);
+    doc.text(`Patient: ${patientName}`, 20, 32);
+    doc.text(`Invoice: ${invoiceCode}`, 20, 40);
+    doc.text(`Printed: ${printedAt}`, 20, 48);
+
+    let y = 64;
+    serviceRecords.forEach((item, index) => {
+      doc.text(
+        `${index + 1}. ${item.serviceName} - ${item.quantity} x ${item.unitPrice.toLocaleString("vi-VN")} VND`,
+        20,
+        y
+      );
+      y += 10;
+    });
+
+    y += 4;
+    doc.text(`Total: ${totalCost.toLocaleString("vi-VN")} VND`, 20, y);
+    y += 8;
+    doc.text(`Insurance: -${insurancePaid.toLocaleString("vi-VN")} VND`, 20, y);
+    y += 8;
+    doc.text(`Patient pays: ${patientPaid.toLocaleString("vi-VN")} VND`, 20, y);
+
+    doc.save(`invoice-${invoiceCode}.pdf`);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -25,110 +81,109 @@ export function InvoiceModel({ isOpen, onClose }: InvoiceModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative flex max-h-[95vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+              className="absolute right-4 top-4 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             >
               <X size={20} />
             </button>
 
-            <div className="p-8 md:p-10 overflow-y-auto flex-1 bg-white text-slate-700">
-              
-              <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 mb-8 gap-6 mt-4 md:mt-0">
+            <div className="flex-1 overflow-y-auto bg-white p-8 text-slate-700 md:p-10">
+              <div className="mb-8 mt-4 flex flex-col-reverse items-start justify-between gap-6 border-b border-slate-200 pb-6 md:mt-0 md:flex-row md:items-center">
                 <div>
-                  <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tight mb-4">Hóa đơn dịch vụ</h2>
-                  <div className="text-slate-600 space-y-1.5 text-sm">
-                    <p><span className="font-semibold text-slate-500 w-24 inline-block">Bệnh nhân:</span> <span className="font-bold text-lg text-[#35678E]">James Dalton</span></p>
-                    <p><span className="font-semibold text-slate-500 w-24 inline-block">Mã HĐ:</span> <span className="font-medium">INV-20260315</span></p>
-                    <p><span className="font-semibold text-slate-500 w-24 inline-block">Ngày in:</span> <span className="font-medium">15/03/2026</span></p>
+                  <h2 className="mb-4 text-3xl font-black uppercase tracking-tight text-slate-800">Hóa đơn dịch vụ</h2>
+                  <div className="space-y-1.5 text-sm text-slate-600">
+                    <p>
+                      <span className="inline-block w-24 font-semibold text-slate-500">Bệnh nhân:</span>{" "}
+                      <span className="text-lg font-bold text-[#35678E]">{patientName}</span>
+                    </p>
+                    <p>
+                      <span className="inline-block w-24 font-semibold text-slate-500">Mã HĐ:</span>{" "}
+                      <span className="font-medium">{invoiceCode}</span>
+                    </p>
+                    <p>
+                      <span className="inline-block w-24 font-semibold text-slate-500">Ngày in:</span>{" "}
+                      <span className="font-medium">{printedAt}</span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                  <img src="/logo.png" alt="MedAssist Logo" className="w-10 h-10 object-contain" />
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-2">
+                  <img src="/logo.png" alt="MedAssist Logo" className="h-10 w-10 object-contain" />
                   <span className="text-2xl font-black tracking-tight text-[#35678E]">MedAssist</span>
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200 mb-8 shadow-sm">
-                <table className="w-full text-left border-collapse min-w-[600px]">
+              <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table className="w-full min-w-[600px] border-collapse text-left">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs uppercase tracking-wider">
-                      <th className="px-5 py-4 font-bold text-center w-16">STT</th>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-600">
+                      <th className="w-16 px-5 py-4 text-center font-bold">STT</th>
                       <th className="px-5 py-4 font-bold">Tên dịch vụ</th>
-                      <th className="px-5 py-4 font-bold text-center w-24">Số lượng</th>
-                      <th className="px-5 py-4 font-bold text-right w-32">Đơn giá</th>
-                      <th className="px-5 py-4 font-bold text-right w-36">Thành tiền</th>
+                      <th className="w-24 px-5 py-4 text-center font-bold">Số lượng</th>
+                      <th className="w-32 px-5 py-4 text-right font-bold">Đơn giá</th>
+                      <th className="w-36 px-5 py-4 text-right font-bold">Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-4 text-center text-slate-500">1</td>
-                      <td className="px-5 py-4 font-semibold text-slate-800">Khám chuyên khoa</td>
-                      <td className="px-5 py-4 text-center font-medium">1</td>
-                      <td className="px-5 py-4 text-right text-slate-600">150.000</td>
-                      <td className="px-5 py-4 text-right font-bold text-slate-800">150.000</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-4 text-center text-slate-500">2</td>
-                      <td className="px-5 py-4 font-semibold text-slate-800">Xét nghiệm máu sinh hóa</td>
-                      <td className="px-5 py-4 text-center font-medium">1</td>
-                      <td className="px-5 py-4 text-right text-slate-600">300.000</td>
-                      <td className="px-5 py-4 text-right font-bold text-slate-800">300.000</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-4 text-center text-slate-500">3</td>
-                      <td className="px-5 py-4 font-semibold text-slate-800">Siêu âm tim màu</td>
-                      <td className="px-5 py-4 text-center font-medium">1</td>
-                      <td className="px-5 py-4 text-right text-slate-600">250.000</td>
-                      <td className="px-5 py-4 text-right font-bold text-slate-800">250.000</td>
-                    </tr>
+                    {serviceRecords.map((record, index) => (
+                      <tr key={record.id} className="transition-colors hover:bg-slate-50">
+                        <td className="px-5 py-4 text-center text-slate-500">{index + 1}</td>
+                        <td className="px-5 py-4 font-semibold text-slate-800">{record.serviceName}</td>
+                        <td className="px-5 py-4 text-center font-medium">{record.quantity}</td>
+                        <td className="px-5 py-4 text-right text-slate-600">{record.unitPrice.toLocaleString("vi-VN")}</td>
+                        <td className="px-5 py-4 text-right font-bold text-slate-800">
+                          {(record.quantity * record.unitPrice).toLocaleString("vi-VN")}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-                
-                <div className="w-full md:w-1/2 space-y-3">
-                  <div className="flex justify-between items-center text-slate-600 px-4">
+              <div className="flex flex-col items-start justify-between gap-8 md:flex-row">
+                <div className="w-full space-y-3 md:w-1/2">
+                  <div className="flex items-center justify-between px-4 text-slate-600">
                     <span className="font-medium">Tổng chi phí:</span>
-                    <span className="font-bold text-slate-800">700.000 VNĐ</span>
+                    <span className="font-bold text-slate-800">{totalCost.toLocaleString("vi-VN")} VND</span>
                   </div>
-                  <div className="flex justify-between items-center text-emerald-600 px-4 pb-4 border-b border-slate-200">
-                    <span className="font-medium">BHYT chi trả (80%):</span>
-                    <span className="font-bold">-560.000 VNĐ</span>
+                  <div className="flex items-center justify-between border-b border-slate-200 px-4 pb-4 text-emerald-600">
+                    <span className="font-medium">BHYT chi trả ({coverageRate}%):</span>
+                    <span className="font-bold">-{insurancePaid.toLocaleString("vi-VN")} VND</span>
                   </div>
-                  <div className="flex justify-between items-center bg-[#F4F7F9] p-5 rounded-2xl border border-blue-100 mt-2 shadow-sm">
+                  <div className="mt-2 flex items-center justify-between rounded-2xl border border-blue-100 bg-[#F4F7F9] p-5 shadow-sm">
                     <span className="font-bold text-slate-800">Cần thanh toán:</span>
-                    <span className="text-2xl font-black text-[#35678E]">140.000 VNĐ</span>
+                    <span className="text-2xl font-black text-[#35678E]">{patientPaid.toLocaleString("vi-VN")} VND</span>
                   </div>
                 </div>
 
-                <div className="w-full md:w-1/2 flex flex-col gap-4 mt-4 md:mt-0">
-                  <div className="flex items-center justify-between bg-blue-50 text-[#35678E] px-5 py-4 rounded-2xl border border-blue-100 shadow-sm">
-                    <span className="font-semibold text-sm uppercase tracking-wide">Quầy thanh toán:</span>
+                <div className="mt-4 flex h-full w-full flex-col gap-4 md:mt-0 md:w-1/2">
+                  <div className="flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-[#35678E] shadow-sm">
+                    <span className="text-sm font-semibold uppercase tracking-wide">Quầy thanh toán:</span>
                     <span className="text-2xl font-black">Số 03</span>
                   </div>
-                  
-                  <div className="text-sm text-slate-500 italic bg-slate-50 p-5 rounded-2xl border border-slate-100 h-full">
+
+                  <div className="h-full rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm italic text-slate-500">
                     * Vui lòng kiểm tra kỹ thông tin trước khi rời quầy. Hóa đơn điện tử sẽ được gửi về email của quý khách.
                   </div>
                 </div>
-
               </div>
-
             </div>
 
-            <div className="flex items-center justify-end gap-4 px-8 py-5 border-t border-slate-100 bg-white">
+            <div className="flex items-center justify-end gap-4 border-t border-slate-100 bg-white px-8 py-5">
               <button
-                className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors shadow-md shadow-orange-500/20"
+                type="button"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-bold text-white shadow-md shadow-orange-500/20 transition-colors hover:bg-orange-600"
               >
                 <Download size={18} /> Xuất PDF
               </button>
               <button
-                className="flex items-center gap-2 px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-[#35678E] to-[#8BB4DC] rounded-xl hover:opacity-90 transition-opacity shadow-md shadow-[#35678E]/20"
+                type="button"
+                onClick={triggerBrowserPrint}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#35678E] to-[#8BB4DC] px-8 py-3 text-sm font-bold text-white shadow-md shadow-[#35678E]/20 transition-opacity hover:opacity-90"
               >
                 <Printer size={18} /> In hóa đơn
               </button>
