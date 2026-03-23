@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Eye, EyeOff, Lock, Mail, Shield, Stethoscope, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  type User,
+} from "firebase/auth";
 import "@/styles/landing.scss";
 import { auth } from "../../../shared/lib/firebase";
 import { createUser } from "../../../shared/lib/generated-fdc";
@@ -22,6 +28,26 @@ type FirebaseError = {
   message?: string;
 };
 
+function isUserRecordConflictError(error: unknown) {
+  const dataConnectError = error as {
+    code?: string;
+    message?: string;
+  };
+
+  const normalizedCode = (dataConnectError.code || "").toLowerCase();
+  const normalizedMessage = (dataConnectError.message || "").toLowerCase();
+
+  return (
+    normalizedCode.includes("already-exists") ||
+    normalizedCode.includes("already_exists") ||
+    normalizedCode.includes("duplicate") ||
+    normalizedMessage.includes("already exists") ||
+    normalizedMessage.includes("duplicate") ||
+    normalizedMessage.includes("unique") ||
+    normalizedMessage.includes("constraint")
+  );
+}
+
 export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) => {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [role, setRole] = useState("doctor");
@@ -32,12 +58,105 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+    }
+  }, [initialMode, isOpen]);
+
   if (!isOpen) {
     return null;
   }
 
   const isLogin = mode === "login";
   const themeColor = isLogin ? "blue" : "cyan";
+
+  const buildDisplayName = (resolvedEmail: string, selectedRole: string, fallbackDisplayName?: string | null) => {
+    const normalizedDisplayName = fallbackDisplayName?.trim();
+    if (normalizedDisplayName) {
+      return normalizedDisplayName;
+    }
+
+    const emailPrefix = resolvedEmail.split("@")[0] || selectedRole;
+    return selectedRole === "doctor" ? `BS. ${emailPrefix}` : `Quản trị ${emailPrefix}`;
+  };
+
+  const ensureDataConnectUserRecord = async (
+    user: User,
+    selectedRole: string,
+    authProvider: string,
+    passwordSet: boolean
+  ) => {
+    const resolvedEmail = user.email || `${user.uid}@medassist.local`;
+    const displayName = buildDisplayName(resolvedEmail, selectedRole, user.displayName);
+
+    try {
+      await createUser(getMedAssistDataConnect(), {
+        uid: user.uid,
+        email: resolvedEmail,
+        role: selectedRole,
+        displayName,
+        status: "active",
+        phone: user.phoneNumber || null,
+        photoURL: user.photoURL || null,
+        authProvider,
+        passwordSet,
+      });
+    } catch (error) {
+      if (isUserRecordConflictError(error)) {
+        return;
+      }
+
+      throw error;
+    }
+  };
+
+  const handleAuthError = (err: unknown) => {
+    const error = err as FirebaseError;
+    console.error("Lỗi xác thực:", error);
+
+    if (error.code === "auth/email-already-in-use") {
+      alert("Email này đã được sử dụng. Vui lòng thử đăng nhập.");
+      return;
+    }
+
+    if (error.code === "auth/weak-password") {
+      alert("Mật khẩu quá yếu. Vui lòng nhập ít nhất 6 ký tự.");
+      return;
+    }
+
+    if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential" || error.code === "auth/user-not-found") {
+      alert("Email hoặc mật khẩu không chính xác.");
+      return;
+    }
+
+    if (error.code === "auth/popup-closed-by-user") {
+      alert("Bạn đã đóng cửa sổ đăng nhập Google. Vui lòng thử lại.");
+      return;
+    }
+
+    if (error.code === "auth/popup-blocked") {
+      alert("Trình duyệt đang chặn popup đăng nhập Google. Vui lòng cho phép popup và thử lại.");
+      return;
+    }
+
+    if (error.code === "auth/account-exists-with-different-credential") {
+      alert("Email này đã đăng ký bằng phương thức khác. Vui lòng đăng nhập bằng phương thức trước đó.");
+      return;
+    }
+
+    if (error.code === "auth/operation-not-allowed") {
+      alert("Đăng nhập Google chưa được bật trong Firebase Authentication.");
+      return;
+    }
+
+    if (error.code === "auth/unauthorized-domain") {
+      alert("Domain hiện tại chưa được cấp quyền đăng nhập Google trong Firebase.");
+      return;
+    }
+
+    alert(`Có lỗi xảy ra: ${error.message || "Không thể xác thực tài khoản."}`);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -60,33 +179,36 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         rememberActiveDoctorUid(user.uid);
-        const emailPrefix = user.email?.split("@")[0] || role;
-        const displayName = role === "doctor" ? `BS. ${emailPrefix}` : `Qu\u1ea3n tr\u1ecb ${emailPrefix}`;
-
-        await createUser(getMedAssistDataConnect(), {
-          uid: user.uid,
-          email: user.email!,
-          role,
-          displayName,
-          status: "active",
-          authProvider: "password",
-          passwordSet: true,
-        });
+        await ensureDataConnectUserRecord(user, role, user.providerData[0]?.providerId || "password", true);
 
         alert("T\u1ea1o t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng! D\u1eef li\u1ec7u \u0111\u00e3 \u0111\u01b0\u1ee3c l\u01b0u tr\u1eef an to\u00e0n.");
         onClose();
       }
     } catch (err: unknown) {
-      const error = err as FirebaseError;
+      handleAuthError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      console.error("L\u1ed7i x\u00e1c th\u1ef1c:", error);
-      if (error.code === "auth/email-already-in-use") {
-        alert("Email n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c s\u1eed d\u1ee5ng. Vui l\u00f2ng th\u1eed \u0111\u0103ng nh\u1eadp.");
-      } else if (error.code === "auth/weak-password") {
-        alert("M\u1eadt kh\u1ea9u qu\u00e1 y\u1ebfu. Vui l\u00f2ng nh\u1eadp \u00edt nh\u1ea5t 6 k\u00fd t\u1ef1.");
-      } else {
-        alert(`C\u00f3 l\u1ed7i x\u1ea3y ra: ${error.message}`);
-      }
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+
+      rememberActiveDoctorUid(user.uid);
+      await ensureDataConnectUserRecord(user, role, user.providerData[0]?.providerId || "google.com", false);
+
+      alert("Đăng nhập bằng Google thành công! Chào mừng bạn trở lại MedAssist.");
+      onClose();
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
@@ -273,10 +395,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#151C2C] py-3.5 text-sm font-medium text-white transition-colors hover:bg-white/5"
+                  onClick={() => void handleGoogleSignIn()}
+                  disabled={isLoading}
+                  className={`flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#151C2C] py-3.5 text-sm font-medium text-white transition-colors ${
+                    isLoading ? "cursor-not-allowed opacity-60" : "hover:bg-white/5"
+                  }`}
                 >
                   <img src="/google.png" className="h-5 w-5" alt="Google" />
-                  {isLogin ? "T\u00e0i kho\u1ea3n Google" : "Ti\u1ebfp t\u1ee5c v\u1edbi Google"}
+                  {isLoading ? "ĐANG XỬ LÝ..." : isLogin ? "T\u00e0i kho\u1ea3n Google" : "Ti\u1ebfp t\u1ee5c v\u1edbi Google"}
                 </button>
 
                 <p className="mt-8 pb-4 text-center text-sm text-slate-400">
