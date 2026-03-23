@@ -11,7 +11,7 @@ Tài liệu này hướng dẫn cách chạy `ma-web` ở môi trường local v
 ## 2. Cài dự án
 
 ```bash
-git clone https://github.com/ten-github-cua-ban/MedAssist-v3.git
+git clone https://github.com/Med-Assist/ma-web-full.git
 cd MedAssist-v3/ma-web
 npm install
 ```
