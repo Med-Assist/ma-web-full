@@ -834,7 +834,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex h-[calc(100vh-2rem)] flex-col xl:col-span-4">
+        <div className="flex h-auto flex-col xl:col-span-4 xl:h-[calc(100vh-2rem)]">
           <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4">
               <div className="flex items-center gap-3">

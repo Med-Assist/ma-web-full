@@ -13,11 +13,13 @@ import {
   FileText,
   LayoutGrid,
   LogOut,
+  Menu,
   MessageSquare,
   MessageSquareText,
   Pill,
   Search,
   Settings,
+  X,
   UserRound,
 } from "lucide-react";
 import { FloatingChat } from "@/features/chat/FloatingZaloContacts";
@@ -72,6 +74,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarAvatar, setSidebarAvatar] = useState("/doctor.png");
   const [sidebarName, setSidebarName] = useState("BS. Danh Nguyễn");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -133,6 +136,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => window.removeEventListener("profileUpdate", handleProfileUpdate);
   }, []);
 
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileSidebarOpen]);
+
   const pageHeader = getPageHeader(pathname);
   let pageHeaderActions: ReactNode = null;
 
@@ -148,7 +168,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             unoptimized
             className="h-8 w-8 rounded-full object-cover"
           />
-          <span className="text-sm font-semibold text-slate-700">ID: 99420 • {sidebarName}</span>
+          <span className="max-w-[150px] truncate text-sm font-semibold text-slate-700 sm:max-w-none">
+            ID: 99420 • {sidebarName}
+          </span>
           <ChevronDown className="h-4 w-4 text-slate-400" />
         </div>
 
@@ -159,7 +181,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     );
   } else if (pathname.startsWith("/dashboard/reports")) {
     pageHeaderActions = (
-      <div className="relative w-full min-w-[260px] lg:w-[320px]">
+      <div className="relative w-full min-w-0 lg:w-[320px]">
         <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
@@ -187,9 +209,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-[#F4F7F9] font-sans text-slate-800">
-      <aside className="fixed z-10 flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:z-10 lg:translate-x-0 ${
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex h-20 items-center border-b border-slate-100 px-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setIsMobileSidebarOpen(false)}>
             <Image
               src="/logo.png"
               alt="MedAssist Logo"
@@ -213,6 +239,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.path}
                 href={item.path}
+                onClick={() => setIsMobileSidebarOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-gradient-to-r from-[#35678E] to-[#8BB4DC] text-white shadow-md shadow-[#35678E]/20"
@@ -229,6 +256,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="border-t border-slate-100 p-4">
           <Link
             href="/dashboard/profile"
+            onClick={() => setIsMobileSidebarOpen(false)}
             className={`mb-2 flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
               pathname === "/dashboard/profile"
                 ? "bg-gradient-to-r from-[#35678E] to-[#8BB4DC] shadow-md shadow-[#35678E]/20"
@@ -285,7 +313,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      <main className="relative ml-64 flex-1 overflow-x-hidden p-6">
+      {isMobileSidebarOpen ? (
+        <button
+          type="button"
+          aria-label="Đóng menu điều hướng"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-900/45 lg:hidden"
+        />
+      ) : null}
+
+      <main className="relative ml-0 min-w-0 flex-1 overflow-x-hidden p-4 lg:ml-64 lg:p-6">
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm lg:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen((current) => !current)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600"
+            aria-label="Mở menu điều hướng"
+          >
+            {isMobileSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <span className="mx-3 truncate text-sm font-semibold text-slate-700">
+            {pageHeader?.title || "Dashboard"}
+          </span>
+          <span className="h-9 w-9" />
+        </div>
+
         {pageHeader && !pathname.startsWith("/dashboard/pharmacy") ? (
           <DashboardPageHeader icon={pageHeader.icon} title={pageHeader.title} actions={pageHeaderActions} />
         ) : null}

@@ -1810,6 +1810,498 @@ export interface ZaloContact_Key {
   __typename?: 'ZaloContact_Key';
 }
 
+interface GetAllUsersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetAllUsersData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetAllUsersData, undefined>;
+  operationName: string;
+}
+export const getAllUsersRef: GetAllUsersRef;
+
+export function getAllUsers(): QueryPromise<GetAllUsersData, undefined>;
+export function getAllUsers(dc: DataConnect): QueryPromise<GetAllUsersData, undefined>;
+
+interface GetDoctorsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetDoctorsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetDoctorsData, undefined>;
+  operationName: string;
+}
+export const getDoctorsRef: GetDoctorsRef;
+
+export function getDoctors(): QueryPromise<GetDoctorsData, undefined>;
+export function getDoctors(dc: DataConnect): QueryPromise<GetDoctorsData, undefined>;
+
+interface GetPatientsByDoctorRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPatientsByDoctorVariables): QueryRef<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetPatientsByDoctorVariables): QueryRef<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
+  operationName: string;
+}
+export const getPatientsByDoctorRef: GetPatientsByDoctorRef;
+
+export function getPatientsByDoctor(vars: GetPatientsByDoctorVariables): QueryPromise<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
+export function getPatientsByDoctor(dc: DataConnect, vars: GetPatientsByDoctorVariables): QueryPromise<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
+
+interface GetAppointmentsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetAppointmentsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetAppointmentsData, undefined>;
+  operationName: string;
+}
+export const getAppointmentsRef: GetAppointmentsRef;
+
+export function getAppointments(): QueryPromise<GetAppointmentsData, undefined>;
+export function getAppointments(dc: DataConnect): QueryPromise<GetAppointmentsData, undefined>;
+
+interface GetAiDiagnosesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetAiDiagnosesData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetAiDiagnosesData, undefined>;
+  operationName: string;
+}
+export const getAiDiagnosesRef: GetAiDiagnosesRef;
+
+export function getAiDiagnoses(): QueryPromise<GetAiDiagnosesData, undefined>;
+export function getAiDiagnoses(dc: DataConnect): QueryPromise<GetAiDiagnosesData, undefined>;
+
+interface SeedAdminUserRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAdminUserData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAdminUserData, undefined>;
+  operationName: string;
+}
+export const seedAdminUserRef: SeedAdminUserRef;
+
+export function seedAdminUser(): MutationPromise<SeedAdminUserData, undefined>;
+export function seedAdminUser(dc: DataConnect): MutationPromise<SeedAdminUserData, undefined>;
+
+interface SeedDoctorNguyenHoangMinhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedDoctorNguyenHoangMinhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedDoctorNguyenHoangMinhData, undefined>;
+  operationName: string;
+}
+export const seedDoctorNguyenHoangMinhRef: SeedDoctorNguyenHoangMinhRef;
+
+export function seedDoctorNguyenHoangMinh(): MutationPromise<SeedDoctorNguyenHoangMinhData, undefined>;
+export function seedDoctorNguyenHoangMinh(dc: DataConnect): MutationPromise<SeedDoctorNguyenHoangMinhData, undefined>;
+
+interface SeedDoctorTranLanAnhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedDoctorTranLanAnhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedDoctorTranLanAnhData, undefined>;
+  operationName: string;
+}
+export const seedDoctorTranLanAnhRef: SeedDoctorTranLanAnhRef;
+
+export function seedDoctorTranLanAnh(): MutationPromise<SeedDoctorTranLanAnhData, undefined>;
+export function seedDoctorTranLanAnh(dc: DataConnect): MutationPromise<SeedDoctorTranLanAnhData, undefined>;
+
+interface SeedPatientLeMinhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedPatientLeMinhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedPatientLeMinhData, undefined>;
+  operationName: string;
+}
+export const seedPatientLeMinhRef: SeedPatientLeMinhRef;
+
+export function seedPatientLeMinh(): MutationPromise<SeedPatientLeMinhData, undefined>;
+export function seedPatientLeMinh(dc: DataConnect): MutationPromise<SeedPatientLeMinhData, undefined>;
+
+interface SeedPatientPhamThuHaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedPatientPhamThuHaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedPatientPhamThuHaData, undefined>;
+  operationName: string;
+}
+export const seedPatientPhamThuHaRef: SeedPatientPhamThuHaRef;
+
+export function seedPatientPhamThuHa(): MutationPromise<SeedPatientPhamThuHaData, undefined>;
+export function seedPatientPhamThuHa(dc: DataConnect): MutationPromise<SeedPatientPhamThuHaData, undefined>;
+
+interface SeedPatientNguyenGiaBaoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedPatientNguyenGiaBaoData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedPatientNguyenGiaBaoData, undefined>;
+  operationName: string;
+}
+export const seedPatientNguyenGiaBaoRef: SeedPatientNguyenGiaBaoRef;
+
+export function seedPatientNguyenGiaBao(): MutationPromise<SeedPatientNguyenGiaBaoData, undefined>;
+export function seedPatientNguyenGiaBao(dc: DataConnect): MutationPromise<SeedPatientNguyenGiaBaoData, undefined>;
+
+interface SeedPatientVoThanhTrucRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedPatientVoThanhTrucData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedPatientVoThanhTrucData, undefined>;
+  operationName: string;
+}
+export const seedPatientVoThanhTrucRef: SeedPatientVoThanhTrucRef;
+
+export function seedPatientVoThanhTruc(): MutationPromise<SeedPatientVoThanhTrucData, undefined>;
+export function seedPatientVoThanhTruc(dc: DataConnect): MutationPromise<SeedPatientVoThanhTrucData, undefined>;
+
+interface SeedProfileLeMinhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedProfileLeMinhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedProfileLeMinhData, undefined>;
+  operationName: string;
+}
+export const seedProfileLeMinhRef: SeedProfileLeMinhRef;
+
+export function seedProfileLeMinh(): MutationPromise<SeedProfileLeMinhData, undefined>;
+export function seedProfileLeMinh(dc: DataConnect): MutationPromise<SeedProfileLeMinhData, undefined>;
+
+interface SeedProfilePhamThuHaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedProfilePhamThuHaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedProfilePhamThuHaData, undefined>;
+  operationName: string;
+}
+export const seedProfilePhamThuHaRef: SeedProfilePhamThuHaRef;
+
+export function seedProfilePhamThuHa(): MutationPromise<SeedProfilePhamThuHaData, undefined>;
+export function seedProfilePhamThuHa(dc: DataConnect): MutationPromise<SeedProfilePhamThuHaData, undefined>;
+
+interface SeedProfileNguyenGiaBaoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedProfileNguyenGiaBaoData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedProfileNguyenGiaBaoData, undefined>;
+  operationName: string;
+}
+export const seedProfileNguyenGiaBaoRef: SeedProfileNguyenGiaBaoRef;
+
+export function seedProfileNguyenGiaBao(): MutationPromise<SeedProfileNguyenGiaBaoData, undefined>;
+export function seedProfileNguyenGiaBao(dc: DataConnect): MutationPromise<SeedProfileNguyenGiaBaoData, undefined>;
+
+interface SeedProfileVoThanhTrucRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedProfileVoThanhTrucData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedProfileVoThanhTrucData, undefined>;
+  operationName: string;
+}
+export const seedProfileVoThanhTrucRef: SeedProfileVoThanhTrucRef;
+
+export function seedProfileVoThanhTruc(): MutationPromise<SeedProfileVoThanhTrucData, undefined>;
+export function seedProfileVoThanhTruc(dc: DataConnect): MutationPromise<SeedProfileVoThanhTrucData, undefined>;
+
+interface SeedFamilyLinkLeMinhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedFamilyLinkLeMinhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedFamilyLinkLeMinhData, undefined>;
+  operationName: string;
+}
+export const seedFamilyLinkLeMinhRef: SeedFamilyLinkLeMinhRef;
+
+export function seedFamilyLinkLeMinh(): MutationPromise<SeedFamilyLinkLeMinhData, undefined>;
+export function seedFamilyLinkLeMinh(dc: DataConnect): MutationPromise<SeedFamilyLinkLeMinhData, undefined>;
+
+interface SeedFamilyLinkPhamThuHaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedFamilyLinkPhamThuHaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedFamilyLinkPhamThuHaData, undefined>;
+  operationName: string;
+}
+export const seedFamilyLinkPhamThuHaRef: SeedFamilyLinkPhamThuHaRef;
+
+export function seedFamilyLinkPhamThuHa(): MutationPromise<SeedFamilyLinkPhamThuHaData, undefined>;
+export function seedFamilyLinkPhamThuHa(dc: DataConnect): MutationPromise<SeedFamilyLinkPhamThuHaData, undefined>;
+
+interface SeedFamilyLinkNguyenGiaBaoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedFamilyLinkNguyenGiaBaoData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedFamilyLinkNguyenGiaBaoData, undefined>;
+  operationName: string;
+}
+export const seedFamilyLinkNguyenGiaBaoRef: SeedFamilyLinkNguyenGiaBaoRef;
+
+export function seedFamilyLinkNguyenGiaBao(): MutationPromise<SeedFamilyLinkNguyenGiaBaoData, undefined>;
+export function seedFamilyLinkNguyenGiaBao(dc: DataConnect): MutationPromise<SeedFamilyLinkNguyenGiaBaoData, undefined>;
+
+interface SeedFamilyLinkVoThanhTrucRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedFamilyLinkVoThanhTrucData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedFamilyLinkVoThanhTrucData, undefined>;
+  operationName: string;
+}
+export const seedFamilyLinkVoThanhTrucRef: SeedFamilyLinkVoThanhTrucRef;
+
+export function seedFamilyLinkVoThanhTruc(): MutationPromise<SeedFamilyLinkVoThanhTrucData, undefined>;
+export function seedFamilyLinkVoThanhTruc(dc: DataConnect): MutationPromise<SeedFamilyLinkVoThanhTrucData, undefined>;
+
+interface SeedAppointmentLeMinh1Ref {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAppointmentLeMinh1Data, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAppointmentLeMinh1Data, undefined>;
+  operationName: string;
+}
+export const seedAppointmentLeMinh1Ref: SeedAppointmentLeMinh1Ref;
+
+export function seedAppointmentLeMinh1(): MutationPromise<SeedAppointmentLeMinh1Data, undefined>;
+export function seedAppointmentLeMinh1(dc: DataConnect): MutationPromise<SeedAppointmentLeMinh1Data, undefined>;
+
+interface SeedAppointmentLeMinh2Ref {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAppointmentLeMinh2Data, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAppointmentLeMinh2Data, undefined>;
+  operationName: string;
+}
+export const seedAppointmentLeMinh2Ref: SeedAppointmentLeMinh2Ref;
+
+export function seedAppointmentLeMinh2(): MutationPromise<SeedAppointmentLeMinh2Data, undefined>;
+export function seedAppointmentLeMinh2(dc: DataConnect): MutationPromise<SeedAppointmentLeMinh2Data, undefined>;
+
+interface SeedAppointmentPhamThuHaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAppointmentPhamThuHaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAppointmentPhamThuHaData, undefined>;
+  operationName: string;
+}
+export const seedAppointmentPhamThuHaRef: SeedAppointmentPhamThuHaRef;
+
+export function seedAppointmentPhamThuHa(): MutationPromise<SeedAppointmentPhamThuHaData, undefined>;
+export function seedAppointmentPhamThuHa(dc: DataConnect): MutationPromise<SeedAppointmentPhamThuHaData, undefined>;
+
+interface SeedAppointmentNguyenGiaBaoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAppointmentNguyenGiaBaoData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAppointmentNguyenGiaBaoData, undefined>;
+  operationName: string;
+}
+export const seedAppointmentNguyenGiaBaoRef: SeedAppointmentNguyenGiaBaoRef;
+
+export function seedAppointmentNguyenGiaBao(): MutationPromise<SeedAppointmentNguyenGiaBaoData, undefined>;
+export function seedAppointmentNguyenGiaBao(dc: DataConnect): MutationPromise<SeedAppointmentNguyenGiaBaoData, undefined>;
+
+interface SeedAppointmentVoThanhTrucRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAppointmentVoThanhTrucData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAppointmentVoThanhTrucData, undefined>;
+  operationName: string;
+}
+export const seedAppointmentVoThanhTrucRef: SeedAppointmentVoThanhTrucRef;
+
+export function seedAppointmentVoThanhTruc(): MutationPromise<SeedAppointmentVoThanhTrucData, undefined>;
+export function seedAppointmentVoThanhTruc(dc: DataConnect): MutationPromise<SeedAppointmentVoThanhTrucData, undefined>;
+
+interface SeedAiDiagnosisLeMinhRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAiDiagnosisLeMinhData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAiDiagnosisLeMinhData, undefined>;
+  operationName: string;
+}
+export const seedAiDiagnosisLeMinhRef: SeedAiDiagnosisLeMinhRef;
+
+export function seedAiDiagnosisLeMinh(): MutationPromise<SeedAiDiagnosisLeMinhData, undefined>;
+export function seedAiDiagnosisLeMinh(dc: DataConnect): MutationPromise<SeedAiDiagnosisLeMinhData, undefined>;
+
+interface SeedAiDiagnosisPhamThuHaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAiDiagnosisPhamThuHaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAiDiagnosisPhamThuHaData, undefined>;
+  operationName: string;
+}
+export const seedAiDiagnosisPhamThuHaRef: SeedAiDiagnosisPhamThuHaRef;
+
+export function seedAiDiagnosisPhamThuHa(): MutationPromise<SeedAiDiagnosisPhamThuHaData, undefined>;
+export function seedAiDiagnosisPhamThuHa(dc: DataConnect): MutationPromise<SeedAiDiagnosisPhamThuHaData, undefined>;
+
+interface SeedAiDiagnosisNguyenGiaBaoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
+  operationName: string;
+}
+export const seedAiDiagnosisNguyenGiaBaoRef: SeedAiDiagnosisNguyenGiaBaoRef;
+
+export function seedAiDiagnosisNguyenGiaBao(): MutationPromise<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
+export function seedAiDiagnosisNguyenGiaBao(dc: DataConnect): MutationPromise<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
+
+interface SeedAiDiagnosisVoThanhTrucRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedAiDiagnosisVoThanhTrucData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedAiDiagnosisVoThanhTrucData, undefined>;
+  operationName: string;
+}
+export const seedAiDiagnosisVoThanhTrucRef: SeedAiDiagnosisVoThanhTrucRef;
+
+export function seedAiDiagnosisVoThanhTruc(): MutationPromise<SeedAiDiagnosisVoThanhTrucData, undefined>;
+export function seedAiDiagnosisVoThanhTruc(dc: DataConnect): MutationPromise<SeedAiDiagnosisVoThanhTrucData, undefined>;
+
+interface GetLandingWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetLandingWorkspaceData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetLandingWorkspaceData, undefined>;
+  operationName: string;
+}
+export const getLandingWorkspaceRef: GetLandingWorkspaceRef;
+
+export function getLandingWorkspace(): QueryPromise<GetLandingWorkspaceData, undefined>;
+export function getLandingWorkspace(dc: DataConnect): QueryPromise<GetLandingWorkspaceData, undefined>;
+
+interface GetZaloContactsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetZaloContactsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetZaloContactsData, undefined>;
+  operationName: string;
+}
+export const getZaloContactsRef: GetZaloContactsRef;
+
+export function getZaloContacts(): QueryPromise<GetZaloContactsData, undefined>;
+export function getZaloContacts(dc: DataConnect): QueryPromise<GetZaloContactsData, undefined>;
+
+interface GetDashboardHomeWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetDashboardHomeWorkspaceVariables): QueryRef<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetDashboardHomeWorkspaceVariables): QueryRef<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
+  operationName: string;
+}
+export const getDashboardHomeWorkspaceRef: GetDashboardHomeWorkspaceRef;
+
+export function getDashboardHomeWorkspace(vars: GetDashboardHomeWorkspaceVariables): QueryPromise<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
+export function getDashboardHomeWorkspace(dc: DataConnect, vars: GetDashboardHomeWorkspaceVariables): QueryPromise<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
+
+interface GetPatientWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPatientWorkspaceVariables): QueryRef<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetPatientWorkspaceVariables): QueryRef<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
+  operationName: string;
+}
+export const getPatientWorkspaceRef: GetPatientWorkspaceRef;
+
+export function getPatientWorkspace(vars: GetPatientWorkspaceVariables): QueryPromise<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
+export function getPatientWorkspace(dc: DataConnect, vars: GetPatientWorkspaceVariables): QueryPromise<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
+
+interface GetScheduleWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetScheduleWorkspaceVariables): QueryRef<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetScheduleWorkspaceVariables): QueryRef<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
+  operationName: string;
+}
+export const getScheduleWorkspaceRef: GetScheduleWorkspaceRef;
+
+export function getScheduleWorkspace(vars: GetScheduleWorkspaceVariables): QueryPromise<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
+export function getScheduleWorkspace(dc: DataConnect, vars: GetScheduleWorkspaceVariables): QueryPromise<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
+
+interface GetConsultationWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetConsultationWorkspaceVariables): QueryRef<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetConsultationWorkspaceVariables): QueryRef<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
+  operationName: string;
+}
+export const getConsultationWorkspaceRef: GetConsultationWorkspaceRef;
+
+export function getConsultationWorkspace(vars: GetConsultationWorkspaceVariables): QueryPromise<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
+export function getConsultationWorkspace(dc: DataConnect, vars: GetConsultationWorkspaceVariables): QueryPromise<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
+
+interface GetAiDiagnosisWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetAiDiagnosisWorkspaceVariables): QueryRef<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetAiDiagnosisWorkspaceVariables): QueryRef<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
+  operationName: string;
+}
+export const getAiDiagnosisWorkspaceRef: GetAiDiagnosisWorkspaceRef;
+
+export function getAiDiagnosisWorkspace(vars: GetAiDiagnosisWorkspaceVariables): QueryPromise<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
+export function getAiDiagnosisWorkspace(dc: DataConnect, vars: GetAiDiagnosisWorkspaceVariables): QueryPromise<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
+
+interface GetPharmacyWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetPharmacyWorkspaceVariables): QueryRef<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetPharmacyWorkspaceVariables): QueryRef<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
+  operationName: string;
+}
+export const getPharmacyWorkspaceRef: GetPharmacyWorkspaceRef;
+
+export function getPharmacyWorkspace(vars: GetPharmacyWorkspaceVariables): QueryPromise<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
+export function getPharmacyWorkspace(dc: DataConnect, vars: GetPharmacyWorkspaceVariables): QueryPromise<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
+
+interface GetReportsWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetReportsWorkspaceData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetReportsWorkspaceData, undefined>;
+  operationName: string;
+}
+export const getReportsWorkspaceRef: GetReportsWorkspaceRef;
+
+export function getReportsWorkspace(): QueryPromise<GetReportsWorkspaceData, undefined>;
+export function getReportsWorkspace(dc: DataConnect): QueryPromise<GetReportsWorkspaceData, undefined>;
+
+interface GetDoctorProfileWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetDoctorProfileWorkspaceVariables): QueryRef<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetDoctorProfileWorkspaceVariables): QueryRef<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
+  operationName: string;
+}
+export const getDoctorProfileWorkspaceRef: GetDoctorProfileWorkspaceRef;
+
+export function getDoctorProfileWorkspace(vars: GetDoctorProfileWorkspaceVariables): QueryPromise<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
+export function getDoctorProfileWorkspace(dc: DataConnect, vars: GetDoctorProfileWorkspaceVariables): QueryPromise<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
+
+interface GetSettingsWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSettingsWorkspaceVariables): QueryRef<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSettingsWorkspaceVariables): QueryRef<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
+  operationName: string;
+}
+export const getSettingsWorkspaceRef: GetSettingsWorkspaceRef;
+
+export function getSettingsWorkspace(vars: GetSettingsWorkspaceVariables): QueryPromise<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
+export function getSettingsWorkspace(dc: DataConnect, vars: GetSettingsWorkspaceVariables): QueryPromise<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
+
+interface GetRecordDigitizationWorkspaceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<GetRecordDigitizationWorkspaceData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<GetRecordDigitizationWorkspaceData, undefined>;
+  operationName: string;
+}
+export const getRecordDigitizationWorkspaceRef: GetRecordDigitizationWorkspaceRef;
+
+export function getRecordDigitizationWorkspace(): QueryPromise<GetRecordDigitizationWorkspaceData, undefined>;
+export function getRecordDigitizationWorkspace(dc: DataConnect): QueryPromise<GetRecordDigitizationWorkspaceData, undefined>;
+
 interface AddTestPatientRef {
   /* Allow users to create refs without passing in DataConnect */
   (): MutationRef<AddTestPatientData, undefined>;
@@ -2349,496 +2841,4 @@ export const upsertDigitizationMetricRef: UpsertDigitizationMetricRef;
 
 export function upsertDigitizationMetric(vars: UpsertDigitizationMetricVariables): MutationPromise<UpsertDigitizationMetricData, UpsertDigitizationMetricVariables>;
 export function upsertDigitizationMetric(dc: DataConnect, vars: UpsertDigitizationMetricVariables): MutationPromise<UpsertDigitizationMetricData, UpsertDigitizationMetricVariables>;
-
-interface GetAllUsersRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetAllUsersData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetAllUsersData, undefined>;
-  operationName: string;
-}
-export const getAllUsersRef: GetAllUsersRef;
-
-export function getAllUsers(): QueryPromise<GetAllUsersData, undefined>;
-export function getAllUsers(dc: DataConnect): QueryPromise<GetAllUsersData, undefined>;
-
-interface GetDoctorsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetDoctorsData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetDoctorsData, undefined>;
-  operationName: string;
-}
-export const getDoctorsRef: GetDoctorsRef;
-
-export function getDoctors(): QueryPromise<GetDoctorsData, undefined>;
-export function getDoctors(dc: DataConnect): QueryPromise<GetDoctorsData, undefined>;
-
-interface GetPatientsByDoctorRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetPatientsByDoctorVariables): QueryRef<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetPatientsByDoctorVariables): QueryRef<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
-  operationName: string;
-}
-export const getPatientsByDoctorRef: GetPatientsByDoctorRef;
-
-export function getPatientsByDoctor(vars: GetPatientsByDoctorVariables): QueryPromise<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
-export function getPatientsByDoctor(dc: DataConnect, vars: GetPatientsByDoctorVariables): QueryPromise<GetPatientsByDoctorData, GetPatientsByDoctorVariables>;
-
-interface GetAppointmentsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetAppointmentsData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetAppointmentsData, undefined>;
-  operationName: string;
-}
-export const getAppointmentsRef: GetAppointmentsRef;
-
-export function getAppointments(): QueryPromise<GetAppointmentsData, undefined>;
-export function getAppointments(dc: DataConnect): QueryPromise<GetAppointmentsData, undefined>;
-
-interface GetAiDiagnosesRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetAiDiagnosesData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetAiDiagnosesData, undefined>;
-  operationName: string;
-}
-export const getAiDiagnosesRef: GetAiDiagnosesRef;
-
-export function getAiDiagnoses(): QueryPromise<GetAiDiagnosesData, undefined>;
-export function getAiDiagnoses(dc: DataConnect): QueryPromise<GetAiDiagnosesData, undefined>;
-
-interface SeedAdminUserRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAdminUserData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAdminUserData, undefined>;
-  operationName: string;
-}
-export const seedAdminUserRef: SeedAdminUserRef;
-
-export function seedAdminUser(): MutationPromise<SeedAdminUserData, undefined>;
-export function seedAdminUser(dc: DataConnect): MutationPromise<SeedAdminUserData, undefined>;
-
-interface SeedDoctorNguyenHoangMinhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedDoctorNguyenHoangMinhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedDoctorNguyenHoangMinhData, undefined>;
-  operationName: string;
-}
-export const seedDoctorNguyenHoangMinhRef: SeedDoctorNguyenHoangMinhRef;
-
-export function seedDoctorNguyenHoangMinh(): MutationPromise<SeedDoctorNguyenHoangMinhData, undefined>;
-export function seedDoctorNguyenHoangMinh(dc: DataConnect): MutationPromise<SeedDoctorNguyenHoangMinhData, undefined>;
-
-interface SeedDoctorTranLanAnhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedDoctorTranLanAnhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedDoctorTranLanAnhData, undefined>;
-  operationName: string;
-}
-export const seedDoctorTranLanAnhRef: SeedDoctorTranLanAnhRef;
-
-export function seedDoctorTranLanAnh(): MutationPromise<SeedDoctorTranLanAnhData, undefined>;
-export function seedDoctorTranLanAnh(dc: DataConnect): MutationPromise<SeedDoctorTranLanAnhData, undefined>;
-
-interface SeedPatientLeMinhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedPatientLeMinhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedPatientLeMinhData, undefined>;
-  operationName: string;
-}
-export const seedPatientLeMinhRef: SeedPatientLeMinhRef;
-
-export function seedPatientLeMinh(): MutationPromise<SeedPatientLeMinhData, undefined>;
-export function seedPatientLeMinh(dc: DataConnect): MutationPromise<SeedPatientLeMinhData, undefined>;
-
-interface SeedPatientPhamThuHaRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedPatientPhamThuHaData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedPatientPhamThuHaData, undefined>;
-  operationName: string;
-}
-export const seedPatientPhamThuHaRef: SeedPatientPhamThuHaRef;
-
-export function seedPatientPhamThuHa(): MutationPromise<SeedPatientPhamThuHaData, undefined>;
-export function seedPatientPhamThuHa(dc: DataConnect): MutationPromise<SeedPatientPhamThuHaData, undefined>;
-
-interface SeedPatientNguyenGiaBaoRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedPatientNguyenGiaBaoData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedPatientNguyenGiaBaoData, undefined>;
-  operationName: string;
-}
-export const seedPatientNguyenGiaBaoRef: SeedPatientNguyenGiaBaoRef;
-
-export function seedPatientNguyenGiaBao(): MutationPromise<SeedPatientNguyenGiaBaoData, undefined>;
-export function seedPatientNguyenGiaBao(dc: DataConnect): MutationPromise<SeedPatientNguyenGiaBaoData, undefined>;
-
-interface SeedPatientVoThanhTrucRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedPatientVoThanhTrucData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedPatientVoThanhTrucData, undefined>;
-  operationName: string;
-}
-export const seedPatientVoThanhTrucRef: SeedPatientVoThanhTrucRef;
-
-export function seedPatientVoThanhTruc(): MutationPromise<SeedPatientVoThanhTrucData, undefined>;
-export function seedPatientVoThanhTruc(dc: DataConnect): MutationPromise<SeedPatientVoThanhTrucData, undefined>;
-
-interface SeedProfileLeMinhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedProfileLeMinhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedProfileLeMinhData, undefined>;
-  operationName: string;
-}
-export const seedProfileLeMinhRef: SeedProfileLeMinhRef;
-
-export function seedProfileLeMinh(): MutationPromise<SeedProfileLeMinhData, undefined>;
-export function seedProfileLeMinh(dc: DataConnect): MutationPromise<SeedProfileLeMinhData, undefined>;
-
-interface SeedProfilePhamThuHaRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedProfilePhamThuHaData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedProfilePhamThuHaData, undefined>;
-  operationName: string;
-}
-export const seedProfilePhamThuHaRef: SeedProfilePhamThuHaRef;
-
-export function seedProfilePhamThuHa(): MutationPromise<SeedProfilePhamThuHaData, undefined>;
-export function seedProfilePhamThuHa(dc: DataConnect): MutationPromise<SeedProfilePhamThuHaData, undefined>;
-
-interface SeedProfileNguyenGiaBaoRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedProfileNguyenGiaBaoData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedProfileNguyenGiaBaoData, undefined>;
-  operationName: string;
-}
-export const seedProfileNguyenGiaBaoRef: SeedProfileNguyenGiaBaoRef;
-
-export function seedProfileNguyenGiaBao(): MutationPromise<SeedProfileNguyenGiaBaoData, undefined>;
-export function seedProfileNguyenGiaBao(dc: DataConnect): MutationPromise<SeedProfileNguyenGiaBaoData, undefined>;
-
-interface SeedProfileVoThanhTrucRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedProfileVoThanhTrucData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedProfileVoThanhTrucData, undefined>;
-  operationName: string;
-}
-export const seedProfileVoThanhTrucRef: SeedProfileVoThanhTrucRef;
-
-export function seedProfileVoThanhTruc(): MutationPromise<SeedProfileVoThanhTrucData, undefined>;
-export function seedProfileVoThanhTruc(dc: DataConnect): MutationPromise<SeedProfileVoThanhTrucData, undefined>;
-
-interface SeedFamilyLinkLeMinhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedFamilyLinkLeMinhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedFamilyLinkLeMinhData, undefined>;
-  operationName: string;
-}
-export const seedFamilyLinkLeMinhRef: SeedFamilyLinkLeMinhRef;
-
-export function seedFamilyLinkLeMinh(): MutationPromise<SeedFamilyLinkLeMinhData, undefined>;
-export function seedFamilyLinkLeMinh(dc: DataConnect): MutationPromise<SeedFamilyLinkLeMinhData, undefined>;
-
-interface SeedFamilyLinkPhamThuHaRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedFamilyLinkPhamThuHaData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedFamilyLinkPhamThuHaData, undefined>;
-  operationName: string;
-}
-export const seedFamilyLinkPhamThuHaRef: SeedFamilyLinkPhamThuHaRef;
-
-export function seedFamilyLinkPhamThuHa(): MutationPromise<SeedFamilyLinkPhamThuHaData, undefined>;
-export function seedFamilyLinkPhamThuHa(dc: DataConnect): MutationPromise<SeedFamilyLinkPhamThuHaData, undefined>;
-
-interface SeedFamilyLinkNguyenGiaBaoRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedFamilyLinkNguyenGiaBaoData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedFamilyLinkNguyenGiaBaoData, undefined>;
-  operationName: string;
-}
-export const seedFamilyLinkNguyenGiaBaoRef: SeedFamilyLinkNguyenGiaBaoRef;
-
-export function seedFamilyLinkNguyenGiaBao(): MutationPromise<SeedFamilyLinkNguyenGiaBaoData, undefined>;
-export function seedFamilyLinkNguyenGiaBao(dc: DataConnect): MutationPromise<SeedFamilyLinkNguyenGiaBaoData, undefined>;
-
-interface SeedFamilyLinkVoThanhTrucRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedFamilyLinkVoThanhTrucData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedFamilyLinkVoThanhTrucData, undefined>;
-  operationName: string;
-}
-export const seedFamilyLinkVoThanhTrucRef: SeedFamilyLinkVoThanhTrucRef;
-
-export function seedFamilyLinkVoThanhTruc(): MutationPromise<SeedFamilyLinkVoThanhTrucData, undefined>;
-export function seedFamilyLinkVoThanhTruc(dc: DataConnect): MutationPromise<SeedFamilyLinkVoThanhTrucData, undefined>;
-
-interface SeedAppointmentLeMinh1Ref {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAppointmentLeMinh1Data, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAppointmentLeMinh1Data, undefined>;
-  operationName: string;
-}
-export const seedAppointmentLeMinh1Ref: SeedAppointmentLeMinh1Ref;
-
-export function seedAppointmentLeMinh1(): MutationPromise<SeedAppointmentLeMinh1Data, undefined>;
-export function seedAppointmentLeMinh1(dc: DataConnect): MutationPromise<SeedAppointmentLeMinh1Data, undefined>;
-
-interface SeedAppointmentLeMinh2Ref {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAppointmentLeMinh2Data, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAppointmentLeMinh2Data, undefined>;
-  operationName: string;
-}
-export const seedAppointmentLeMinh2Ref: SeedAppointmentLeMinh2Ref;
-
-export function seedAppointmentLeMinh2(): MutationPromise<SeedAppointmentLeMinh2Data, undefined>;
-export function seedAppointmentLeMinh2(dc: DataConnect): MutationPromise<SeedAppointmentLeMinh2Data, undefined>;
-
-interface SeedAppointmentPhamThuHaRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAppointmentPhamThuHaData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAppointmentPhamThuHaData, undefined>;
-  operationName: string;
-}
-export const seedAppointmentPhamThuHaRef: SeedAppointmentPhamThuHaRef;
-
-export function seedAppointmentPhamThuHa(): MutationPromise<SeedAppointmentPhamThuHaData, undefined>;
-export function seedAppointmentPhamThuHa(dc: DataConnect): MutationPromise<SeedAppointmentPhamThuHaData, undefined>;
-
-interface SeedAppointmentNguyenGiaBaoRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAppointmentNguyenGiaBaoData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAppointmentNguyenGiaBaoData, undefined>;
-  operationName: string;
-}
-export const seedAppointmentNguyenGiaBaoRef: SeedAppointmentNguyenGiaBaoRef;
-
-export function seedAppointmentNguyenGiaBao(): MutationPromise<SeedAppointmentNguyenGiaBaoData, undefined>;
-export function seedAppointmentNguyenGiaBao(dc: DataConnect): MutationPromise<SeedAppointmentNguyenGiaBaoData, undefined>;
-
-interface SeedAppointmentVoThanhTrucRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAppointmentVoThanhTrucData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAppointmentVoThanhTrucData, undefined>;
-  operationName: string;
-}
-export const seedAppointmentVoThanhTrucRef: SeedAppointmentVoThanhTrucRef;
-
-export function seedAppointmentVoThanhTruc(): MutationPromise<SeedAppointmentVoThanhTrucData, undefined>;
-export function seedAppointmentVoThanhTruc(dc: DataConnect): MutationPromise<SeedAppointmentVoThanhTrucData, undefined>;
-
-interface SeedAiDiagnosisLeMinhRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAiDiagnosisLeMinhData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAiDiagnosisLeMinhData, undefined>;
-  operationName: string;
-}
-export const seedAiDiagnosisLeMinhRef: SeedAiDiagnosisLeMinhRef;
-
-export function seedAiDiagnosisLeMinh(): MutationPromise<SeedAiDiagnosisLeMinhData, undefined>;
-export function seedAiDiagnosisLeMinh(dc: DataConnect): MutationPromise<SeedAiDiagnosisLeMinhData, undefined>;
-
-interface SeedAiDiagnosisPhamThuHaRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAiDiagnosisPhamThuHaData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAiDiagnosisPhamThuHaData, undefined>;
-  operationName: string;
-}
-export const seedAiDiagnosisPhamThuHaRef: SeedAiDiagnosisPhamThuHaRef;
-
-export function seedAiDiagnosisPhamThuHa(): MutationPromise<SeedAiDiagnosisPhamThuHaData, undefined>;
-export function seedAiDiagnosisPhamThuHa(dc: DataConnect): MutationPromise<SeedAiDiagnosisPhamThuHaData, undefined>;
-
-interface SeedAiDiagnosisNguyenGiaBaoRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
-  operationName: string;
-}
-export const seedAiDiagnosisNguyenGiaBaoRef: SeedAiDiagnosisNguyenGiaBaoRef;
-
-export function seedAiDiagnosisNguyenGiaBao(): MutationPromise<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
-export function seedAiDiagnosisNguyenGiaBao(dc: DataConnect): MutationPromise<SeedAiDiagnosisNguyenGiaBaoData, undefined>;
-
-interface SeedAiDiagnosisVoThanhTrucRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): MutationRef<SeedAiDiagnosisVoThanhTrucData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): MutationRef<SeedAiDiagnosisVoThanhTrucData, undefined>;
-  operationName: string;
-}
-export const seedAiDiagnosisVoThanhTrucRef: SeedAiDiagnosisVoThanhTrucRef;
-
-export function seedAiDiagnosisVoThanhTruc(): MutationPromise<SeedAiDiagnosisVoThanhTrucData, undefined>;
-export function seedAiDiagnosisVoThanhTruc(dc: DataConnect): MutationPromise<SeedAiDiagnosisVoThanhTrucData, undefined>;
-
-interface GetLandingWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetLandingWorkspaceData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetLandingWorkspaceData, undefined>;
-  operationName: string;
-}
-export const getLandingWorkspaceRef: GetLandingWorkspaceRef;
-
-export function getLandingWorkspace(): QueryPromise<GetLandingWorkspaceData, undefined>;
-export function getLandingWorkspace(dc: DataConnect): QueryPromise<GetLandingWorkspaceData, undefined>;
-
-interface GetZaloContactsRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetZaloContactsData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetZaloContactsData, undefined>;
-  operationName: string;
-}
-export const getZaloContactsRef: GetZaloContactsRef;
-
-export function getZaloContacts(): QueryPromise<GetZaloContactsData, undefined>;
-export function getZaloContacts(dc: DataConnect): QueryPromise<GetZaloContactsData, undefined>;
-
-interface GetDashboardHomeWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetDashboardHomeWorkspaceVariables): QueryRef<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetDashboardHomeWorkspaceVariables): QueryRef<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
-  operationName: string;
-}
-export const getDashboardHomeWorkspaceRef: GetDashboardHomeWorkspaceRef;
-
-export function getDashboardHomeWorkspace(vars: GetDashboardHomeWorkspaceVariables): QueryPromise<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
-export function getDashboardHomeWorkspace(dc: DataConnect, vars: GetDashboardHomeWorkspaceVariables): QueryPromise<GetDashboardHomeWorkspaceData, GetDashboardHomeWorkspaceVariables>;
-
-interface GetPatientWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetPatientWorkspaceVariables): QueryRef<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetPatientWorkspaceVariables): QueryRef<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
-  operationName: string;
-}
-export const getPatientWorkspaceRef: GetPatientWorkspaceRef;
-
-export function getPatientWorkspace(vars: GetPatientWorkspaceVariables): QueryPromise<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
-export function getPatientWorkspace(dc: DataConnect, vars: GetPatientWorkspaceVariables): QueryPromise<GetPatientWorkspaceData, GetPatientWorkspaceVariables>;
-
-interface GetScheduleWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetScheduleWorkspaceVariables): QueryRef<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetScheduleWorkspaceVariables): QueryRef<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
-  operationName: string;
-}
-export const getScheduleWorkspaceRef: GetScheduleWorkspaceRef;
-
-export function getScheduleWorkspace(vars: GetScheduleWorkspaceVariables): QueryPromise<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
-export function getScheduleWorkspace(dc: DataConnect, vars: GetScheduleWorkspaceVariables): QueryPromise<GetScheduleWorkspaceData, GetScheduleWorkspaceVariables>;
-
-interface GetConsultationWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetConsultationWorkspaceVariables): QueryRef<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetConsultationWorkspaceVariables): QueryRef<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
-  operationName: string;
-}
-export const getConsultationWorkspaceRef: GetConsultationWorkspaceRef;
-
-export function getConsultationWorkspace(vars: GetConsultationWorkspaceVariables): QueryPromise<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
-export function getConsultationWorkspace(dc: DataConnect, vars: GetConsultationWorkspaceVariables): QueryPromise<GetConsultationWorkspaceData, GetConsultationWorkspaceVariables>;
-
-interface GetAiDiagnosisWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetAiDiagnosisWorkspaceVariables): QueryRef<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetAiDiagnosisWorkspaceVariables): QueryRef<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
-  operationName: string;
-}
-export const getAiDiagnosisWorkspaceRef: GetAiDiagnosisWorkspaceRef;
-
-export function getAiDiagnosisWorkspace(vars: GetAiDiagnosisWorkspaceVariables): QueryPromise<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
-export function getAiDiagnosisWorkspace(dc: DataConnect, vars: GetAiDiagnosisWorkspaceVariables): QueryPromise<GetAiDiagnosisWorkspaceData, GetAiDiagnosisWorkspaceVariables>;
-
-interface GetPharmacyWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetPharmacyWorkspaceVariables): QueryRef<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetPharmacyWorkspaceVariables): QueryRef<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
-  operationName: string;
-}
-export const getPharmacyWorkspaceRef: GetPharmacyWorkspaceRef;
-
-export function getPharmacyWorkspace(vars: GetPharmacyWorkspaceVariables): QueryPromise<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
-export function getPharmacyWorkspace(dc: DataConnect, vars: GetPharmacyWorkspaceVariables): QueryPromise<GetPharmacyWorkspaceData, GetPharmacyWorkspaceVariables>;
-
-interface GetReportsWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetReportsWorkspaceData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetReportsWorkspaceData, undefined>;
-  operationName: string;
-}
-export const getReportsWorkspaceRef: GetReportsWorkspaceRef;
-
-export function getReportsWorkspace(): QueryPromise<GetReportsWorkspaceData, undefined>;
-export function getReportsWorkspace(dc: DataConnect): QueryPromise<GetReportsWorkspaceData, undefined>;
-
-interface GetDoctorProfileWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetDoctorProfileWorkspaceVariables): QueryRef<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetDoctorProfileWorkspaceVariables): QueryRef<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
-  operationName: string;
-}
-export const getDoctorProfileWorkspaceRef: GetDoctorProfileWorkspaceRef;
-
-export function getDoctorProfileWorkspace(vars: GetDoctorProfileWorkspaceVariables): QueryPromise<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
-export function getDoctorProfileWorkspace(dc: DataConnect, vars: GetDoctorProfileWorkspaceVariables): QueryPromise<GetDoctorProfileWorkspaceData, GetDoctorProfileWorkspaceVariables>;
-
-interface GetSettingsWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetSettingsWorkspaceVariables): QueryRef<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetSettingsWorkspaceVariables): QueryRef<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
-  operationName: string;
-}
-export const getSettingsWorkspaceRef: GetSettingsWorkspaceRef;
-
-export function getSettingsWorkspace(vars: GetSettingsWorkspaceVariables): QueryPromise<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
-export function getSettingsWorkspace(dc: DataConnect, vars: GetSettingsWorkspaceVariables): QueryPromise<GetSettingsWorkspaceData, GetSettingsWorkspaceVariables>;
-
-interface GetRecordDigitizationWorkspaceRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (): QueryRef<GetRecordDigitizationWorkspaceData, undefined>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect): QueryRef<GetRecordDigitizationWorkspaceData, undefined>;
-  operationName: string;
-}
-export const getRecordDigitizationWorkspaceRef: GetRecordDigitizationWorkspaceRef;
-
-export function getRecordDigitizationWorkspace(): QueryPromise<GetRecordDigitizationWorkspaceData, undefined>;
-export function getRecordDigitizationWorkspace(dc: DataConnect): QueryPromise<GetRecordDigitizationWorkspaceData, undefined>;
 

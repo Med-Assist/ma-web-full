@@ -29,7 +29,7 @@ const DailyTimeline = ({
   selectedRoomId?: string | null;
 }) => {
   return (
-    <aside className="flex h-full min-h-[760px] flex-col overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(148,163,184,0.08)]">
+    <aside className="flex h-full min-h-[640px] flex-col overflow-hidden rounded-[34px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(148,163,184,0.08)] lg:min-h-[760px]">
       <div className="px-6 pb-8 pt-8 lg:px-8">
         <h2 className="text-[18px] font-extrabold tracking-tight text-slate-800">LỊCH HẸN HÔM NAY</h2>
         <p className="mt-1 text-[15px] text-[#788aa7]">{dateLabel}</p>

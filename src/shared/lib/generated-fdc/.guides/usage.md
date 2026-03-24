@@ -14,38 +14,38 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { addTestPatient, createUser, createPatientProfile, createFamilyLink, createAppointment, createAiDiagnosis, createContactLead, upsertZaloContact, upsertDoctorProfile, upsertNotificationPreference } from '@firebasegen/default-connector';
+import { getAllUsers, getDoctors, getPatientsByDoctor, getAppointments, getAiDiagnoses, seedAdminUser, seedDoctorNguyenHoangMinh, seedDoctorTranLanAnh, seedPatientLeMinh, seedPatientPhamThuHa } from '@firebasegen/default-connector';
 
 
-// Operation AddTestPatient: 
-const { data } = await AddTestPatient(dataConnect);
+// Operation GetAllUsers: 
+const { data } = await GetAllUsers(dataConnect);
 
-// Operation CreateUser:  For variables, look at type CreateUserVars in ../index.d.ts
-const { data } = await CreateUser(dataConnect, createUserVars);
+// Operation GetDoctors: 
+const { data } = await GetDoctors(dataConnect);
 
-// Operation CreatePatientProfile:  For variables, look at type CreatePatientProfileVars in ../index.d.ts
-const { data } = await CreatePatientProfile(dataConnect, createPatientProfileVars);
+// Operation GetPatientsByDoctor:  For variables, look at type GetPatientsByDoctorVars in ../index.d.ts
+const { data } = await GetPatientsByDoctor(dataConnect, getPatientsByDoctorVars);
 
-// Operation CreateFamilyLink:  For variables, look at type CreateFamilyLinkVars in ../index.d.ts
-const { data } = await CreateFamilyLink(dataConnect, createFamilyLinkVars);
+// Operation GetAppointments: 
+const { data } = await GetAppointments(dataConnect);
 
-// Operation CreateAppointment:  For variables, look at type CreateAppointmentVars in ../index.d.ts
-const { data } = await CreateAppointment(dataConnect, createAppointmentVars);
+// Operation GetAiDiagnoses: 
+const { data } = await GetAiDiagnoses(dataConnect);
 
-// Operation CreateAiDiagnosis:  For variables, look at type CreateAiDiagnosisVars in ../index.d.ts
-const { data } = await CreateAiDiagnosis(dataConnect, createAiDiagnosisVars);
+// Operation SeedAdminUser: 
+const { data } = await SeedAdminUser(dataConnect);
 
-// Operation CreateContactLead:  For variables, look at type CreateContactLeadVars in ../index.d.ts
-const { data } = await CreateContactLead(dataConnect, createContactLeadVars);
+// Operation SeedDoctorNguyenHoangMinh: 
+const { data } = await SeedDoctorNguyenHoangMinh(dataConnect);
 
-// Operation UpsertZaloContact:  For variables, look at type UpsertZaloContactVars in ../index.d.ts
-const { data } = await UpsertZaloContact(dataConnect, upsertZaloContactVars);
+// Operation SeedDoctorTranLanAnh: 
+const { data } = await SeedDoctorTranLanAnh(dataConnect);
 
-// Operation UpsertDoctorProfile:  For variables, look at type UpsertDoctorProfileVars in ../index.d.ts
-const { data } = await UpsertDoctorProfile(dataConnect, upsertDoctorProfileVars);
+// Operation SeedPatientLeMinh: 
+const { data } = await SeedPatientLeMinh(dataConnect);
 
-// Operation UpsertNotificationPreference:  For variables, look at type UpsertNotificationPreferenceVars in ../index.d.ts
-const { data } = await UpsertNotificationPreference(dataConnect, upsertNotificationPreferenceVars);
+// Operation SeedPatientPhamThuHa: 
+const { data } = await SeedPatientPhamThuHa(dataConnect);
 
 
 ```

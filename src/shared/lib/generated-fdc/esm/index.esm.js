@@ -6,6 +6,457 @@ export const connectorConfig = {
   location: 'asia-northeast1'
 };
 
+export const getAllUsersRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAllUsers');
+}
+getAllUsersRef.operationName = 'GetAllUsers';
+
+export function getAllUsers(dc) {
+  return executeQuery(getAllUsersRef(dc));
+}
+
+export const getDoctorsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetDoctors');
+}
+getDoctorsRef.operationName = 'GetDoctors';
+
+export function getDoctors(dc) {
+  return executeQuery(getDoctorsRef(dc));
+}
+
+export const getPatientsByDoctorRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPatientsByDoctor', inputVars);
+}
+getPatientsByDoctorRef.operationName = 'GetPatientsByDoctor';
+
+export function getPatientsByDoctor(dcOrVars, vars) {
+  return executeQuery(getPatientsByDoctorRef(dcOrVars, vars));
+}
+
+export const getAppointmentsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAppointments');
+}
+getAppointmentsRef.operationName = 'GetAppointments';
+
+export function getAppointments(dc) {
+  return executeQuery(getAppointmentsRef(dc));
+}
+
+export const getAiDiagnosesRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAiDiagnoses');
+}
+getAiDiagnosesRef.operationName = 'GetAiDiagnoses';
+
+export function getAiDiagnoses(dc) {
+  return executeQuery(getAiDiagnosesRef(dc));
+}
+
+export const seedAdminUserRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAdminUser');
+}
+seedAdminUserRef.operationName = 'SeedAdminUser';
+
+export function seedAdminUser(dc) {
+  return executeMutation(seedAdminUserRef(dc));
+}
+
+export const seedDoctorNguyenHoangMinhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedDoctorNguyenHoangMinh');
+}
+seedDoctorNguyenHoangMinhRef.operationName = 'SeedDoctorNguyenHoangMinh';
+
+export function seedDoctorNguyenHoangMinh(dc) {
+  return executeMutation(seedDoctorNguyenHoangMinhRef(dc));
+}
+
+export const seedDoctorTranLanAnhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedDoctorTranLanAnh');
+}
+seedDoctorTranLanAnhRef.operationName = 'SeedDoctorTranLanAnh';
+
+export function seedDoctorTranLanAnh(dc) {
+  return executeMutation(seedDoctorTranLanAnhRef(dc));
+}
+
+export const seedPatientLeMinhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedPatientLeMinh');
+}
+seedPatientLeMinhRef.operationName = 'SeedPatientLeMinh';
+
+export function seedPatientLeMinh(dc) {
+  return executeMutation(seedPatientLeMinhRef(dc));
+}
+
+export const seedPatientPhamThuHaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedPatientPhamThuHa');
+}
+seedPatientPhamThuHaRef.operationName = 'SeedPatientPhamThuHa';
+
+export function seedPatientPhamThuHa(dc) {
+  return executeMutation(seedPatientPhamThuHaRef(dc));
+}
+
+export const seedPatientNguyenGiaBaoRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedPatientNguyenGiaBao');
+}
+seedPatientNguyenGiaBaoRef.operationName = 'SeedPatientNguyenGiaBao';
+
+export function seedPatientNguyenGiaBao(dc) {
+  return executeMutation(seedPatientNguyenGiaBaoRef(dc));
+}
+
+export const seedPatientVoThanhTrucRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedPatientVoThanhTruc');
+}
+seedPatientVoThanhTrucRef.operationName = 'SeedPatientVoThanhTruc';
+
+export function seedPatientVoThanhTruc(dc) {
+  return executeMutation(seedPatientVoThanhTrucRef(dc));
+}
+
+export const seedProfileLeMinhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedProfileLeMinh');
+}
+seedProfileLeMinhRef.operationName = 'SeedProfileLeMinh';
+
+export function seedProfileLeMinh(dc) {
+  return executeMutation(seedProfileLeMinhRef(dc));
+}
+
+export const seedProfilePhamThuHaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedProfilePhamThuHa');
+}
+seedProfilePhamThuHaRef.operationName = 'SeedProfilePhamThuHa';
+
+export function seedProfilePhamThuHa(dc) {
+  return executeMutation(seedProfilePhamThuHaRef(dc));
+}
+
+export const seedProfileNguyenGiaBaoRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedProfileNguyenGiaBao');
+}
+seedProfileNguyenGiaBaoRef.operationName = 'SeedProfileNguyenGiaBao';
+
+export function seedProfileNguyenGiaBao(dc) {
+  return executeMutation(seedProfileNguyenGiaBaoRef(dc));
+}
+
+export const seedProfileVoThanhTrucRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedProfileVoThanhTruc');
+}
+seedProfileVoThanhTrucRef.operationName = 'SeedProfileVoThanhTruc';
+
+export function seedProfileVoThanhTruc(dc) {
+  return executeMutation(seedProfileVoThanhTrucRef(dc));
+}
+
+export const seedFamilyLinkLeMinhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedFamilyLinkLeMinh');
+}
+seedFamilyLinkLeMinhRef.operationName = 'SeedFamilyLinkLeMinh';
+
+export function seedFamilyLinkLeMinh(dc) {
+  return executeMutation(seedFamilyLinkLeMinhRef(dc));
+}
+
+export const seedFamilyLinkPhamThuHaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedFamilyLinkPhamThuHa');
+}
+seedFamilyLinkPhamThuHaRef.operationName = 'SeedFamilyLinkPhamThuHa';
+
+export function seedFamilyLinkPhamThuHa(dc) {
+  return executeMutation(seedFamilyLinkPhamThuHaRef(dc));
+}
+
+export const seedFamilyLinkNguyenGiaBaoRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedFamilyLinkNguyenGiaBao');
+}
+seedFamilyLinkNguyenGiaBaoRef.operationName = 'SeedFamilyLinkNguyenGiaBao';
+
+export function seedFamilyLinkNguyenGiaBao(dc) {
+  return executeMutation(seedFamilyLinkNguyenGiaBaoRef(dc));
+}
+
+export const seedFamilyLinkVoThanhTrucRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedFamilyLinkVoThanhTruc');
+}
+seedFamilyLinkVoThanhTrucRef.operationName = 'SeedFamilyLinkVoThanhTruc';
+
+export function seedFamilyLinkVoThanhTruc(dc) {
+  return executeMutation(seedFamilyLinkVoThanhTrucRef(dc));
+}
+
+export const seedAppointmentLeMinh1Ref = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAppointmentLeMinh1');
+}
+seedAppointmentLeMinh1Ref.operationName = 'SeedAppointmentLeMinh1';
+
+export function seedAppointmentLeMinh1(dc) {
+  return executeMutation(seedAppointmentLeMinh1Ref(dc));
+}
+
+export const seedAppointmentLeMinh2Ref = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAppointmentLeMinh2');
+}
+seedAppointmentLeMinh2Ref.operationName = 'SeedAppointmentLeMinh2';
+
+export function seedAppointmentLeMinh2(dc) {
+  return executeMutation(seedAppointmentLeMinh2Ref(dc));
+}
+
+export const seedAppointmentPhamThuHaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAppointmentPhamThuHa');
+}
+seedAppointmentPhamThuHaRef.operationName = 'SeedAppointmentPhamThuHa';
+
+export function seedAppointmentPhamThuHa(dc) {
+  return executeMutation(seedAppointmentPhamThuHaRef(dc));
+}
+
+export const seedAppointmentNguyenGiaBaoRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAppointmentNguyenGiaBao');
+}
+seedAppointmentNguyenGiaBaoRef.operationName = 'SeedAppointmentNguyenGiaBao';
+
+export function seedAppointmentNguyenGiaBao(dc) {
+  return executeMutation(seedAppointmentNguyenGiaBaoRef(dc));
+}
+
+export const seedAppointmentVoThanhTrucRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAppointmentVoThanhTruc');
+}
+seedAppointmentVoThanhTrucRef.operationName = 'SeedAppointmentVoThanhTruc';
+
+export function seedAppointmentVoThanhTruc(dc) {
+  return executeMutation(seedAppointmentVoThanhTrucRef(dc));
+}
+
+export const seedAiDiagnosisLeMinhRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAiDiagnosisLeMinh');
+}
+seedAiDiagnosisLeMinhRef.operationName = 'SeedAiDiagnosisLeMinh';
+
+export function seedAiDiagnosisLeMinh(dc) {
+  return executeMutation(seedAiDiagnosisLeMinhRef(dc));
+}
+
+export const seedAiDiagnosisPhamThuHaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAiDiagnosisPhamThuHa');
+}
+seedAiDiagnosisPhamThuHaRef.operationName = 'SeedAiDiagnosisPhamThuHa';
+
+export function seedAiDiagnosisPhamThuHa(dc) {
+  return executeMutation(seedAiDiagnosisPhamThuHaRef(dc));
+}
+
+export const seedAiDiagnosisNguyenGiaBaoRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAiDiagnosisNguyenGiaBao');
+}
+seedAiDiagnosisNguyenGiaBaoRef.operationName = 'SeedAiDiagnosisNguyenGiaBao';
+
+export function seedAiDiagnosisNguyenGiaBao(dc) {
+  return executeMutation(seedAiDiagnosisNguyenGiaBaoRef(dc));
+}
+
+export const seedAiDiagnosisVoThanhTrucRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedAiDiagnosisVoThanhTruc');
+}
+seedAiDiagnosisVoThanhTrucRef.operationName = 'SeedAiDiagnosisVoThanhTruc';
+
+export function seedAiDiagnosisVoThanhTruc(dc) {
+  return executeMutation(seedAiDiagnosisVoThanhTrucRef(dc));
+}
+
+export const getLandingWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetLandingWorkspace');
+}
+getLandingWorkspaceRef.operationName = 'GetLandingWorkspace';
+
+export function getLandingWorkspace(dc) {
+  return executeQuery(getLandingWorkspaceRef(dc));
+}
+
+export const getZaloContactsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetZaloContacts');
+}
+getZaloContactsRef.operationName = 'GetZaloContacts';
+
+export function getZaloContacts(dc) {
+  return executeQuery(getZaloContactsRef(dc));
+}
+
+export const getDashboardHomeWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetDashboardHomeWorkspace', inputVars);
+}
+getDashboardHomeWorkspaceRef.operationName = 'GetDashboardHomeWorkspace';
+
+export function getDashboardHomeWorkspace(dcOrVars, vars) {
+  return executeQuery(getDashboardHomeWorkspaceRef(dcOrVars, vars));
+}
+
+export const getPatientWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPatientWorkspace', inputVars);
+}
+getPatientWorkspaceRef.operationName = 'GetPatientWorkspace';
+
+export function getPatientWorkspace(dcOrVars, vars) {
+  return executeQuery(getPatientWorkspaceRef(dcOrVars, vars));
+}
+
+export const getScheduleWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetScheduleWorkspace', inputVars);
+}
+getScheduleWorkspaceRef.operationName = 'GetScheduleWorkspace';
+
+export function getScheduleWorkspace(dcOrVars, vars) {
+  return executeQuery(getScheduleWorkspaceRef(dcOrVars, vars));
+}
+
+export const getConsultationWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetConsultationWorkspace', inputVars);
+}
+getConsultationWorkspaceRef.operationName = 'GetConsultationWorkspace';
+
+export function getConsultationWorkspace(dcOrVars, vars) {
+  return executeQuery(getConsultationWorkspaceRef(dcOrVars, vars));
+}
+
+export const getAiDiagnosisWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetAiDiagnosisWorkspace', inputVars);
+}
+getAiDiagnosisWorkspaceRef.operationName = 'GetAiDiagnosisWorkspace';
+
+export function getAiDiagnosisWorkspace(dcOrVars, vars) {
+  return executeQuery(getAiDiagnosisWorkspaceRef(dcOrVars, vars));
+}
+
+export const getPharmacyWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetPharmacyWorkspace', inputVars);
+}
+getPharmacyWorkspaceRef.operationName = 'GetPharmacyWorkspace';
+
+export function getPharmacyWorkspace(dcOrVars, vars) {
+  return executeQuery(getPharmacyWorkspaceRef(dcOrVars, vars));
+}
+
+export const getReportsWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetReportsWorkspace');
+}
+getReportsWorkspaceRef.operationName = 'GetReportsWorkspace';
+
+export function getReportsWorkspace(dc) {
+  return executeQuery(getReportsWorkspaceRef(dc));
+}
+
+export const getDoctorProfileWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetDoctorProfileWorkspace', inputVars);
+}
+getDoctorProfileWorkspaceRef.operationName = 'GetDoctorProfileWorkspace';
+
+export function getDoctorProfileWorkspace(dcOrVars, vars) {
+  return executeQuery(getDoctorProfileWorkspaceRef(dcOrVars, vars));
+}
+
+export const getSettingsWorkspaceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetSettingsWorkspace', inputVars);
+}
+getSettingsWorkspaceRef.operationName = 'GetSettingsWorkspace';
+
+export function getSettingsWorkspace(dcOrVars, vars) {
+  return executeQuery(getSettingsWorkspaceRef(dcOrVars, vars));
+}
+
+export const getRecordDigitizationWorkspaceRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetRecordDigitizationWorkspace');
+}
+getRecordDigitizationWorkspaceRef.operationName = 'GetRecordDigitizationWorkspace';
+
+export function getRecordDigitizationWorkspace(dc) {
+  return executeQuery(getRecordDigitizationWorkspaceRef(dc));
+}
+
 export const addTestPatientRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();
@@ -499,456 +950,5 @@ upsertDigitizationMetricRef.operationName = 'UpsertDigitizationMetric';
 
 export function upsertDigitizationMetric(dcOrVars, vars) {
   return executeMutation(upsertDigitizationMetricRef(dcOrVars, vars));
-}
-
-export const getAllUsersRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetAllUsers');
-}
-getAllUsersRef.operationName = 'GetAllUsers';
-
-export function getAllUsers(dc) {
-  return executeQuery(getAllUsersRef(dc));
-}
-
-export const getDoctorsRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetDoctors');
-}
-getDoctorsRef.operationName = 'GetDoctors';
-
-export function getDoctors(dc) {
-  return executeQuery(getDoctorsRef(dc));
-}
-
-export const getPatientsByDoctorRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetPatientsByDoctor', inputVars);
-}
-getPatientsByDoctorRef.operationName = 'GetPatientsByDoctor';
-
-export function getPatientsByDoctor(dcOrVars, vars) {
-  return executeQuery(getPatientsByDoctorRef(dcOrVars, vars));
-}
-
-export const getAppointmentsRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetAppointments');
-}
-getAppointmentsRef.operationName = 'GetAppointments';
-
-export function getAppointments(dc) {
-  return executeQuery(getAppointmentsRef(dc));
-}
-
-export const getAiDiagnosesRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetAiDiagnoses');
-}
-getAiDiagnosesRef.operationName = 'GetAiDiagnoses';
-
-export function getAiDiagnoses(dc) {
-  return executeQuery(getAiDiagnosesRef(dc));
-}
-
-export const seedAdminUserRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAdminUser');
-}
-seedAdminUserRef.operationName = 'SeedAdminUser';
-
-export function seedAdminUser(dc) {
-  return executeMutation(seedAdminUserRef(dc));
-}
-
-export const seedDoctorNguyenHoangMinhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedDoctorNguyenHoangMinh');
-}
-seedDoctorNguyenHoangMinhRef.operationName = 'SeedDoctorNguyenHoangMinh';
-
-export function seedDoctorNguyenHoangMinh(dc) {
-  return executeMutation(seedDoctorNguyenHoangMinhRef(dc));
-}
-
-export const seedDoctorTranLanAnhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedDoctorTranLanAnh');
-}
-seedDoctorTranLanAnhRef.operationName = 'SeedDoctorTranLanAnh';
-
-export function seedDoctorTranLanAnh(dc) {
-  return executeMutation(seedDoctorTranLanAnhRef(dc));
-}
-
-export const seedPatientLeMinhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedPatientLeMinh');
-}
-seedPatientLeMinhRef.operationName = 'SeedPatientLeMinh';
-
-export function seedPatientLeMinh(dc) {
-  return executeMutation(seedPatientLeMinhRef(dc));
-}
-
-export const seedPatientPhamThuHaRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedPatientPhamThuHa');
-}
-seedPatientPhamThuHaRef.operationName = 'SeedPatientPhamThuHa';
-
-export function seedPatientPhamThuHa(dc) {
-  return executeMutation(seedPatientPhamThuHaRef(dc));
-}
-
-export const seedPatientNguyenGiaBaoRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedPatientNguyenGiaBao');
-}
-seedPatientNguyenGiaBaoRef.operationName = 'SeedPatientNguyenGiaBao';
-
-export function seedPatientNguyenGiaBao(dc) {
-  return executeMutation(seedPatientNguyenGiaBaoRef(dc));
-}
-
-export const seedPatientVoThanhTrucRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedPatientVoThanhTruc');
-}
-seedPatientVoThanhTrucRef.operationName = 'SeedPatientVoThanhTruc';
-
-export function seedPatientVoThanhTruc(dc) {
-  return executeMutation(seedPatientVoThanhTrucRef(dc));
-}
-
-export const seedProfileLeMinhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedProfileLeMinh');
-}
-seedProfileLeMinhRef.operationName = 'SeedProfileLeMinh';
-
-export function seedProfileLeMinh(dc) {
-  return executeMutation(seedProfileLeMinhRef(dc));
-}
-
-export const seedProfilePhamThuHaRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedProfilePhamThuHa');
-}
-seedProfilePhamThuHaRef.operationName = 'SeedProfilePhamThuHa';
-
-export function seedProfilePhamThuHa(dc) {
-  return executeMutation(seedProfilePhamThuHaRef(dc));
-}
-
-export const seedProfileNguyenGiaBaoRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedProfileNguyenGiaBao');
-}
-seedProfileNguyenGiaBaoRef.operationName = 'SeedProfileNguyenGiaBao';
-
-export function seedProfileNguyenGiaBao(dc) {
-  return executeMutation(seedProfileNguyenGiaBaoRef(dc));
-}
-
-export const seedProfileVoThanhTrucRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedProfileVoThanhTruc');
-}
-seedProfileVoThanhTrucRef.operationName = 'SeedProfileVoThanhTruc';
-
-export function seedProfileVoThanhTruc(dc) {
-  return executeMutation(seedProfileVoThanhTrucRef(dc));
-}
-
-export const seedFamilyLinkLeMinhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedFamilyLinkLeMinh');
-}
-seedFamilyLinkLeMinhRef.operationName = 'SeedFamilyLinkLeMinh';
-
-export function seedFamilyLinkLeMinh(dc) {
-  return executeMutation(seedFamilyLinkLeMinhRef(dc));
-}
-
-export const seedFamilyLinkPhamThuHaRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedFamilyLinkPhamThuHa');
-}
-seedFamilyLinkPhamThuHaRef.operationName = 'SeedFamilyLinkPhamThuHa';
-
-export function seedFamilyLinkPhamThuHa(dc) {
-  return executeMutation(seedFamilyLinkPhamThuHaRef(dc));
-}
-
-export const seedFamilyLinkNguyenGiaBaoRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedFamilyLinkNguyenGiaBao');
-}
-seedFamilyLinkNguyenGiaBaoRef.operationName = 'SeedFamilyLinkNguyenGiaBao';
-
-export function seedFamilyLinkNguyenGiaBao(dc) {
-  return executeMutation(seedFamilyLinkNguyenGiaBaoRef(dc));
-}
-
-export const seedFamilyLinkVoThanhTrucRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedFamilyLinkVoThanhTruc');
-}
-seedFamilyLinkVoThanhTrucRef.operationName = 'SeedFamilyLinkVoThanhTruc';
-
-export function seedFamilyLinkVoThanhTruc(dc) {
-  return executeMutation(seedFamilyLinkVoThanhTrucRef(dc));
-}
-
-export const seedAppointmentLeMinh1Ref = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAppointmentLeMinh1');
-}
-seedAppointmentLeMinh1Ref.operationName = 'SeedAppointmentLeMinh1';
-
-export function seedAppointmentLeMinh1(dc) {
-  return executeMutation(seedAppointmentLeMinh1Ref(dc));
-}
-
-export const seedAppointmentLeMinh2Ref = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAppointmentLeMinh2');
-}
-seedAppointmentLeMinh2Ref.operationName = 'SeedAppointmentLeMinh2';
-
-export function seedAppointmentLeMinh2(dc) {
-  return executeMutation(seedAppointmentLeMinh2Ref(dc));
-}
-
-export const seedAppointmentPhamThuHaRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAppointmentPhamThuHa');
-}
-seedAppointmentPhamThuHaRef.operationName = 'SeedAppointmentPhamThuHa';
-
-export function seedAppointmentPhamThuHa(dc) {
-  return executeMutation(seedAppointmentPhamThuHaRef(dc));
-}
-
-export const seedAppointmentNguyenGiaBaoRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAppointmentNguyenGiaBao');
-}
-seedAppointmentNguyenGiaBaoRef.operationName = 'SeedAppointmentNguyenGiaBao';
-
-export function seedAppointmentNguyenGiaBao(dc) {
-  return executeMutation(seedAppointmentNguyenGiaBaoRef(dc));
-}
-
-export const seedAppointmentVoThanhTrucRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAppointmentVoThanhTruc');
-}
-seedAppointmentVoThanhTrucRef.operationName = 'SeedAppointmentVoThanhTruc';
-
-export function seedAppointmentVoThanhTruc(dc) {
-  return executeMutation(seedAppointmentVoThanhTrucRef(dc));
-}
-
-export const seedAiDiagnosisLeMinhRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAiDiagnosisLeMinh');
-}
-seedAiDiagnosisLeMinhRef.operationName = 'SeedAiDiagnosisLeMinh';
-
-export function seedAiDiagnosisLeMinh(dc) {
-  return executeMutation(seedAiDiagnosisLeMinhRef(dc));
-}
-
-export const seedAiDiagnosisPhamThuHaRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAiDiagnosisPhamThuHa');
-}
-seedAiDiagnosisPhamThuHaRef.operationName = 'SeedAiDiagnosisPhamThuHa';
-
-export function seedAiDiagnosisPhamThuHa(dc) {
-  return executeMutation(seedAiDiagnosisPhamThuHaRef(dc));
-}
-
-export const seedAiDiagnosisNguyenGiaBaoRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAiDiagnosisNguyenGiaBao');
-}
-seedAiDiagnosisNguyenGiaBaoRef.operationName = 'SeedAiDiagnosisNguyenGiaBao';
-
-export function seedAiDiagnosisNguyenGiaBao(dc) {
-  return executeMutation(seedAiDiagnosisNguyenGiaBaoRef(dc));
-}
-
-export const seedAiDiagnosisVoThanhTrucRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'SeedAiDiagnosisVoThanhTruc');
-}
-seedAiDiagnosisVoThanhTrucRef.operationName = 'SeedAiDiagnosisVoThanhTruc';
-
-export function seedAiDiagnosisVoThanhTruc(dc) {
-  return executeMutation(seedAiDiagnosisVoThanhTrucRef(dc));
-}
-
-export const getLandingWorkspaceRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetLandingWorkspace');
-}
-getLandingWorkspaceRef.operationName = 'GetLandingWorkspace';
-
-export function getLandingWorkspace(dc) {
-  return executeQuery(getLandingWorkspaceRef(dc));
-}
-
-export const getZaloContactsRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetZaloContacts');
-}
-getZaloContactsRef.operationName = 'GetZaloContacts';
-
-export function getZaloContacts(dc) {
-  return executeQuery(getZaloContactsRef(dc));
-}
-
-export const getDashboardHomeWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetDashboardHomeWorkspace', inputVars);
-}
-getDashboardHomeWorkspaceRef.operationName = 'GetDashboardHomeWorkspace';
-
-export function getDashboardHomeWorkspace(dcOrVars, vars) {
-  return executeQuery(getDashboardHomeWorkspaceRef(dcOrVars, vars));
-}
-
-export const getPatientWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetPatientWorkspace', inputVars);
-}
-getPatientWorkspaceRef.operationName = 'GetPatientWorkspace';
-
-export function getPatientWorkspace(dcOrVars, vars) {
-  return executeQuery(getPatientWorkspaceRef(dcOrVars, vars));
-}
-
-export const getScheduleWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetScheduleWorkspace', inputVars);
-}
-getScheduleWorkspaceRef.operationName = 'GetScheduleWorkspace';
-
-export function getScheduleWorkspace(dcOrVars, vars) {
-  return executeQuery(getScheduleWorkspaceRef(dcOrVars, vars));
-}
-
-export const getConsultationWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetConsultationWorkspace', inputVars);
-}
-getConsultationWorkspaceRef.operationName = 'GetConsultationWorkspace';
-
-export function getConsultationWorkspace(dcOrVars, vars) {
-  return executeQuery(getConsultationWorkspaceRef(dcOrVars, vars));
-}
-
-export const getAiDiagnosisWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetAiDiagnosisWorkspace', inputVars);
-}
-getAiDiagnosisWorkspaceRef.operationName = 'GetAiDiagnosisWorkspace';
-
-export function getAiDiagnosisWorkspace(dcOrVars, vars) {
-  return executeQuery(getAiDiagnosisWorkspaceRef(dcOrVars, vars));
-}
-
-export const getPharmacyWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetPharmacyWorkspace', inputVars);
-}
-getPharmacyWorkspaceRef.operationName = 'GetPharmacyWorkspace';
-
-export function getPharmacyWorkspace(dcOrVars, vars) {
-  return executeQuery(getPharmacyWorkspaceRef(dcOrVars, vars));
-}
-
-export const getReportsWorkspaceRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetReportsWorkspace');
-}
-getReportsWorkspaceRef.operationName = 'GetReportsWorkspace';
-
-export function getReportsWorkspace(dc) {
-  return executeQuery(getReportsWorkspaceRef(dc));
-}
-
-export const getDoctorProfileWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetDoctorProfileWorkspace', inputVars);
-}
-getDoctorProfileWorkspaceRef.operationName = 'GetDoctorProfileWorkspace';
-
-export function getDoctorProfileWorkspace(dcOrVars, vars) {
-  return executeQuery(getDoctorProfileWorkspaceRef(dcOrVars, vars));
-}
-
-export const getSettingsWorkspaceRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetSettingsWorkspace', inputVars);
-}
-getSettingsWorkspaceRef.operationName = 'GetSettingsWorkspace';
-
-export function getSettingsWorkspace(dcOrVars, vars) {
-  return executeQuery(getSettingsWorkspaceRef(dcOrVars, vars));
-}
-
-export const getRecordDigitizationWorkspaceRef = (dc) => {
-  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetRecordDigitizationWorkspace');
-}
-getRecordDigitizationWorkspaceRef.operationName = 'GetRecordDigitizationWorkspace';
-
-export function getRecordDigitizationWorkspace(dc) {
-  return executeQuery(getRecordDigitizationWorkspaceRef(dc));
 }
 

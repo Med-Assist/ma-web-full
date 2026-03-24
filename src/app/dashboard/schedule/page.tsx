@@ -621,14 +621,14 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Quản lý Lịch trình & Ca trực</h1>
           <p className="text-slate-500 text-sm mt-1">Sắp xếp nhân sự và điều phối cuộc hẹn thông minh</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">
             <Download size={16} /> Xuất báo cáo
           </button>
@@ -641,10 +641,10 @@ export default function SchedulePage() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Calendar Section (col-span-2) */}
-        <div className="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col">
+        <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 p-4 shadow-sm sm:p-6 flex flex-col">
           {/* Calendar Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <h2 className="text-lg font-bold text-slate-900">{currentMonthStr}</h2>
               <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-1">
                 <button onClick={() => setOffset(o => o - 1)} className="p-1 hover:bg-white rounded-md text-slate-500 transition-colors"><ChevronLeft size={16} /></button>
@@ -652,22 +652,22 @@ export default function SchedulePage() {
                 <button onClick={() => setOffset(o => o + 1)} className="p-1 hover:bg-white rounded-md text-slate-500 transition-colors"><ChevronRight size={16} /></button>
               </div>
             </div>
-            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-1 text-sm font-semibold">
+            <div className="flex flex-wrap items-center bg-slate-50 border border-slate-200 rounded-lg p-1 text-xs font-semibold sm:text-sm">
               <button 
                 onClick={() => handleViewChange('Ngày')}
-                className={`px-4 py-1.5 rounded-md transition-colors ${view === 'Ngày' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-3 py-1.5 rounded-md transition-colors sm:px-4 ${view === 'Ngày' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Ngày
               </button>
               <button 
                 onClick={() => handleViewChange('Tuần')}
-                className={`px-4 py-1.5 rounded-md transition-colors ${view === 'Tuần' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-3 py-1.5 rounded-md transition-colors sm:px-4 ${view === 'Tuần' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Tuần
               </button>
               <button 
                 onClick={() => handleViewChange('Tháng')}
-                className={`px-4 py-1.5 rounded-md transition-colors ${view === 'Tháng' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-3 py-1.5 rounded-md transition-colors sm:px-4 ${view === 'Tháng' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Tháng
               </button>
@@ -676,9 +676,9 @@ export default function SchedulePage() {
 
           {/* Calendar Grid */}
           {view === 'Tuần' && (
-            <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col">
+            <div className="flex-1 border border-slate-100 rounded-xl overflow-x-auto overflow-y-hidden flex flex-col">
               {/* Days Header */}
-              <div className="flex border-b border-slate-100 bg-slate-50/50 pr-1 sm:pr-2 md:pr-3">
+              <div className="flex min-w-[860px] border-b border-slate-100 bg-slate-50/50 pr-1 sm:pr-2 md:pr-3">
                 <div className="w-16 shrink-0 p-3 border-r border-slate-100"></div>
                 <div className="flex-1 grid grid-cols-7">
                   {weekDays.map((day, i) => (
@@ -692,7 +692,7 @@ export default function SchedulePage() {
                 </div>
               </div>
               {/* Time Grid */}
-              <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex">
+              <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex min-w-[860px]">
                 {/* Time column */}
                 <div className="w-16 shrink-0 border-r border-slate-100 flex flex-col bg-white">
                   {Array.from({length: 10}).map((_, i) => (
@@ -832,16 +832,16 @@ export default function SchedulePage() {
           )}
 
           {view === 'Ngày' && (
-            <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col">
+            <div className="flex-1 border border-slate-100 rounded-xl overflow-x-auto overflow-y-hidden flex flex-col">
               {/* Day Header */}
-              <div className="border-b border-slate-100 bg-slate-50/50 flex pr-1 sm:pr-2 md:pr-3">
+              <div className="border-b border-slate-100 bg-slate-50/50 flex min-w-[680px] pr-1 sm:pr-2 md:pr-3">
                 <div className="w-16 p-3 text-center text-xs font-medium text-slate-400 border-r border-slate-100 shrink-0"></div>
                 <div className="flex-1 p-3 text-center text-sm font-bold text-blue-600">
                   {dayString}
                 </div>
               </div>
               {/* Time Grid */}
-              <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex">
+              <div className="flex-1 overflow-y-auto relative min-h-[500px] custom-scrollbar flex min-w-[860px]">
                 {/* Time column */}
                 <div className="w-16 border-r border-slate-100 flex flex-col bg-white shrink-0">
                   {Array.from({length: 10}).map((_, i) => (
@@ -963,9 +963,9 @@ export default function SchedulePage() {
           )}
 
           {view === 'Tháng' && (
-            <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden flex flex-col bg-white min-h-[600px]">
+            <div className="flex-1 border border-slate-100 rounded-xl overflow-x-auto overflow-y-hidden flex flex-col bg-white min-h-[600px]">
               {/* Days Header */}
-              <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
+              <div className="grid min-w-[860px] grid-cols-7 border-b border-slate-100 bg-slate-50/50">
                 {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day, i) => (
                   <div key={i} className={`p-3 text-center text-xs font-bold text-slate-500 ${i < 6 ? 'border-r border-slate-100' : ''}`}>
                     {day}
@@ -973,7 +973,7 @@ export default function SchedulePage() {
                 ))}
               </div>
               {/* Calendar Grid */}
-              <div className="flex-1 grid grid-cols-7 grid-rows-6">
+              <div className="flex-1 grid min-w-[860px] grid-cols-7 grid-rows-6">
                 {monthDays.map((day, i) => {
                   // Find events for this day
                   const allMonthEvents = [...monthEvents, ...customEvents];
@@ -1013,7 +1013,7 @@ export default function SchedulePage() {
               </div>
             </div>
           )}
-          <div className="mt-5 flex items-center justify-center gap-8 text-xs font-medium text-slate-400">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-slate-400 sm:gap-8">
             <span className="flex items-center gap-1.5"><Move size={14} /> Kéo & thả để thay đổi lịch</span>
             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
             <span className="flex items-center gap-1.5"><Info size={14} /> Nhấp để xem chi tiết</span>
@@ -1021,7 +1021,7 @@ export default function SchedulePage() {
         </div>
 
         {/* Right Sidebar (col-span-1) */}
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-x-hidden">
           {/* Quản lý ca trực */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">

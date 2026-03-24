@@ -167,9 +167,9 @@ export const FloatingChat = () => {
   }, [contacts, searchTerm]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <div className="fixed bottom-4 right-3 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6 sm:gap-4">
       {isOpen ? (
-        <div className="flex h-[500px] w-[340px] flex-col overflow-hidden rounded-xl border border-slate-800/60 bg-[#0B1121] font-sans shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-200">
+        <div className="flex h-[min(500px,calc(100vh-8rem))] w-[min(340px,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-slate-800/60 bg-[#0B1121] font-sans shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-200 sm:h-[500px] sm:w-[340px]">
           <div className="flex items-center justify-between px-5 pb-3 pt-5">
             <div>
               <h2 className="flex items-center gap-2 text-[20px] font-bold tracking-tight text-white">

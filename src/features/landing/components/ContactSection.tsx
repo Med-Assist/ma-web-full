@@ -4,9 +4,6 @@ import { type ChangeEvent, type FormEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, ArrowRight, FileText, Mail, MapPin, Phone, Stethoscope, User } from "lucide-react";
 import "@/styles/landing.scss";
-import { createContactLead } from "@/shared/lib/generated-fdc";
-import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
-import { nowIsoString } from "@/shared/lib/medassist-runtime";
 import { useLandingWorkspace } from "../lib/useLandingWorkspace";
 
 type ContactFormState = {
@@ -17,6 +14,7 @@ type ContactFormState = {
 };
 
 export const ContactSection = () => {
+  const supportEmail = "nguyenthanhdanhctk42@gmail.com";
   const { data } = useLandingWorkspace();
   const support = data.supportContactInfos[0];
   const [form, setForm] = useState<ContactFormState>({
@@ -35,7 +33,7 @@ export const ContactSection = () => {
       }));
     };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!form.name.trim() || !form.email.trim() || !form.role.trim() || !form.message.trim()) {
@@ -44,29 +42,31 @@ export const ContactSection = () => {
     }
 
     setIsSubmitting(true);
+    const roleLabel =
+      form.role === "doctor"
+        ? "Bác sĩ / Chuyên gia y tế"
+        : form.role === "hospital"
+          ? "Bệnh viện / Phòng khám"
+          : "Bệnh nhân";
+    const subject = `[MedAssist Support] ${roleLabel} - ${form.name.trim()}`;
+    const body = [
+      `Họ và tên: ${form.name.trim()}`,
+      `Email liên hệ: ${form.email.trim()}`,
+      `Vai trò: ${roleLabel}`,
+      "",
+      "Nội dung:",
+      form.message.trim(),
+    ].join("\n");
 
-    try {
-      await createContactLead(getMedAssistDataConnect(), {
-        name: form.name.trim(),
-        email: form.email.trim(),
-        role: form.role,
-        message: form.message.trim(),
-        createdAt: nowIsoString(),
-      });
+    window.location.href = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-      alert("Y\u00eau c\u1ea7u c\u1ee7a b\u1ea1n \u0111\u00e3 \u0111\u01b0\u1ee3c l\u01b0u v\u00e0o Data Connect. MedAssist s\u1ebd li\u00ean h\u1ec7 l\u1ea1i s\u1edbm.");
-      setForm({
-        name: "",
-        email: "",
-        role: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("Kh\u00f4ng th\u1ec3 g\u1eedi contact lead:", error);
-      alert("Kh\u00f4ng th\u1ec3 g\u1eedi y\u00eau c\u1ea7u l\u00fac n\u00e0y. Vui l\u00f2ng th\u1eed l\u1ea1i.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setForm({
+      name: "",
+      email: "",
+      role: "",
+      message: "",
+    });
+    setIsSubmitting(false);
   };
 
   return (
@@ -97,10 +97,12 @@ export const ContactSection = () => {
 
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-[#0B1121] text-cyan-400">
-                      <Mail className="h-5 w-5" />
-                    </div>
-                    <span className="font-medium text-white">{support.email}</span>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-[#0B1121] text-cyan-400">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                    <a href={`mailto:${supportEmail}`} className="font-medium text-white hover:text-cyan-400 transition-colors">
+                      {supportEmail}
+                    </a>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-[#0B1121] text-cyan-400">

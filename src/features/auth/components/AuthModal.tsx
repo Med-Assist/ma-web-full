@@ -215,15 +215,15 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/80 p-3 pt-4 backdrop-blur-md sm:items-center sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative flex h-[90vh] max-h-[700px] w-full max-w-5xl overflow-hidden rounded-[2.5rem] border border-white/5 bg-[#0B1121] shadow-2xl"
+        className="relative flex h-[calc(100vh-1.5rem)] max-h-[700px] w-full max-w-5xl overflow-hidden rounded-[1.5rem] border border-white/5 bg-[#0B1121] shadow-2xl sm:h-[90vh] sm:rounded-[2.5rem]"
       >
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-50 rounded-full bg-[#0B1121] p-1 text-slate-500 transition-colors hover:text-white"
+          className="absolute right-4 top-4 z-50 rounded-full bg-[#0B1121] p-1 text-slate-500 transition-colors hover:text-white sm:right-6 sm:top-6"
         >
           <X className="h-6 w-6" />
         </button>
@@ -256,7 +256,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
           </div>
         </div>
 
-        <div className="flex h-full w-full flex-col bg-[#0B1121] p-8 sm:p-12 lg:w-1/2">
+        <div className="flex h-full w-full flex-col bg-[#0B1121] p-5 sm:p-8 lg:w-1/2 lg:p-12">
           <div className="custom-scrollbar flex-1 overflow-y-auto pr-2">
             <AnimatePresence mode="wait">
               <motion.div key={mode} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -275,7 +275,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
                   </label>
                 ) : null}
 
-                <div className="mb-8 grid grid-cols-2 gap-4">
+                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => setRole("admin")}
@@ -320,7 +320,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
                     </div>
                   </div>
 
-                  <div className={isLogin ? "" : "grid grid-cols-2 gap-4"}>
+                  <div className={isLogin ? "" : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
                     <div className="flex-1">
                       <div className="mb-2 flex justify-between">
                         <label className="text-sm font-medium text-slate-300">{"M\u1eadt kh\u1ea9u"}</label>

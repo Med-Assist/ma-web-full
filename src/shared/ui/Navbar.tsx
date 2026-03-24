@@ -21,7 +21,7 @@ export const Navbar = () => {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="MedAssist Logo" className="h-10 w-auto object-contain" />
-            <Link href="/" className="text-xl font-bold tracking-tight text-white">
+            <Link href="/" className="text-lg font-bold tracking-tight text-white sm:text-xl">
               MedAssist<span className="text-cyan-400">.</span>
             </Link>
           </div>
@@ -44,17 +44,17 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 sm:flex">
               <Globe className="h-3.5 w-3.5" /> VI/EN
             </button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-colors hover:bg-white/10">
+            <button className="hidden h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-colors hover:bg-white/10 sm:flex">
               <Moon className="h-4 w-4" />
             </button>
 
             <button
               onClick={() => openAuth("login")}
-              className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-colors hover:bg-blue-500"
+              className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-medium text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-colors hover:bg-blue-500 sm:px-5 sm:py-2 sm:text-sm"
             >
               Đăng nhập
             </button>
