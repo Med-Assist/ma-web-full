@@ -1,6 +1,5 @@
 import { createSign } from "crypto";
 import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
 
 const DEFAULT_LOCATION = "asia-southeast1";
 const DEFAULT_MAX_FILE_SIZE_MB = 12;
@@ -61,10 +60,86 @@ let cachedToken:
     }
   | null = null;
 
+function stripWrappingQuotes(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const hasDoubleQuotes = trimmed.startsWith('"') && trimmed.endsWith('"');
+  const hasSingleQuotes = trimmed.startsWith("'") && trimmed.endsWith("'");
+  if (hasDoubleQuotes || hasSingleQuotes) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function readEnvValue(keys: string[]) {
+  for (const key of keys) {
+    const value = stripWrappingQuotes(process.env[key] || "");
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
+function readProjectIdFromEnv() {
+  return readEnvValue(["OCR_GOOGLE_PROJECT_ID", "GOOGLE_CLOUD_PROJECT", "GCP_PROJECT"]);
+}
+
+function readProcessorIdFromEnv() {
+  return readEnvValue(["OCR_GOOGLE_PROCESSOR_ID", "DOCUMENT_AI_PROCESSOR_ID"]);
+}
+
+function readLocationFromEnv() {
+  return readEnvValue(["OCR_GOOGLE_LOCATION", "DOCUMENT_AI_LOCATION"]) || DEFAULT_LOCATION;
+}
+
+function readTokenUriFromEnv() {
+  return readEnvValue(["OCR_GOOGLE_TOKEN_URI"]) || DEFAULT_TOKEN_URI;
+}
+
+function detectCredentialInputMode() {
+  if (readEnvValue(["OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64", "GOOGLE_SERVICE_ACCOUNT_JSON_BASE64"])) {
+    return "json_base64" as const;
+  }
+
+  if (readEnvValue(["OCR_GOOGLE_SERVICE_ACCOUNT_JSON", "GOOGLE_SERVICE_ACCOUNT_JSON"])) {
+    return "json" as const;
+  }
+
+  if (readEnvValue(["OCR_GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_APPLICATION_CREDENTIALS"])) {
+    return "file_path" as const;
+  }
+
+  const email = readEnvValue(["OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_EMAIL"]);
+  const privateKey = readEnvValue([
+    "OCR_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+    "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+  ]);
+  if (email && privateKey) {
+    return "email_private_key" as const;
+  }
+
+  return "none" as const;
+}
+
 function decodeBase64Utf8(value: string) {
   try {
-    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-    return Buffer.from(normalized, "base64").toString("utf8");
+    const normalized = value
+      .replace(/\s+/g, "")
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    if (!normalized) {
+      return "";
+    }
+
+    const paddingLength = normalized.length % 4;
+    const padded =
+      paddingLength === 0 ? normalized : `${normalized}${"=".repeat(4 - paddingLength)}`;
+    return Buffer.from(padded, "base64").toString("utf8");
   } catch {
     return "";
   }
@@ -99,46 +174,60 @@ function parseCredentialFromJson(rawJson: string, sourceLabel: string): ServiceA
 }
 
 function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
-  const encodedJson = (
-    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
-    ""
-  ).trim();
-  const rawJson = (
-    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON ||
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
-    ""
-  ).trim();
-  let jsonCredentialError: string | null = null;
+  const encodedJson = readEnvValue([
+    "OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64",
+    "GOOGLE_SERVICE_ACCOUNT_JSON_BASE64",
+  ]);
+  const rawJson = readEnvValue(["OCR_GOOGLE_SERVICE_ACCOUNT_JSON", "GOOGLE_SERVICE_ACCOUNT_JSON"]);
+  const jsonErrors: string[] = [];
   let pathCredentialError: string | null = null;
 
-  if (encodedJson || rawJson) {
-    const decoded = encodedJson ? decodeBase64Utf8(encodedJson) : rawJson || "";
+  const jsonCandidates: Array<{ label: string; value: string; isBase64: boolean }> = [];
+  if (encodedJson) {
+    jsonCandidates.push({
+      label: "OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64",
+      value: encodedJson,
+      isBase64: true,
+    });
+  }
+  if (rawJson) {
+    jsonCandidates.push({
+      label: "OCR_GOOGLE_SERVICE_ACCOUNT_JSON",
+      value: rawJson,
+      isBase64: false,
+    });
+  }
 
-    if (!decoded) {
-      jsonCredentialError = "Unable to decode OCR service account credential JSON.";
-    } else {
-      try {
-        return parseCredentialFromJson(decoded, "OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64)");
-      } catch (error) {
-        jsonCredentialError =
-          error instanceof Error ? error.message : "Unable to parse OCR service account credential JSON.";
+  for (const candidate of jsonCandidates) {
+    let normalizedJson = candidate.value;
+    if (candidate.isBase64) {
+      if (!candidate.value.startsWith("{")) {
+        normalizedJson = decodeBase64Utf8(candidate.value);
       }
+      if (!normalizedJson) {
+        jsonErrors.push(`Unable to decode credential JSON from ${candidate.label}.`);
+        continue;
+      }
+    }
+
+    try {
+      return parseCredentialFromJson(normalizedJson, candidate.label);
+    } catch (error) {
+      jsonErrors.push(error instanceof Error ? error.message : `Unable to parse ${candidate.label}.`);
     }
   }
 
-  const credentialPath = (
-    process.env.OCR_GOOGLE_APPLICATION_CREDENTIALS ||
-    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-    ""
-  ).trim();
+  const credentialPath = readEnvValue([
+    "OCR_GOOGLE_APPLICATION_CREDENTIALS",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+  ]);
 
   if (credentialPath) {
-    const resolvedCredentialPath = resolve(credentialPath);
+    const resolvedCredentialPath = credentialPath;
     if (existsSync(resolvedCredentialPath)) {
       const credentialRaw = readFileSync(resolvedCredentialPath, "utf8").trim();
       if (!credentialRaw) {
-        pathCredentialError = `OCR credential file is empty at path: ${resolvedCredentialPath}.`;
+        pathCredentialError = "OCR credential file is empty.";
       } else {
         try {
           return parseCredentialFromJson(credentialRaw, resolvedCredentialPath);
@@ -148,35 +237,30 @@ function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
         }
       }
     } else {
-      pathCredentialError = `OCR credential file does not exist at path: ${resolvedCredentialPath}.`;
+      pathCredentialError = "OCR credential file path is invalid or unavailable in this environment.";
     }
   }
 
-  const email = (
-    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL ||
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
-    ""
-  ).trim();
+  const email = readEnvValue(["OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_EMAIL"]);
   const privateKey = normalizePrivateKey(
-    (
-      process.env.OCR_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ||
-      process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ||
-      ""
-    ).trim()
+    readEnvValue([
+      "OCR_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+      "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+    ])
   );
 
   if (email && privateKey) {
     return {
-      project_id: process.env.OCR_GOOGLE_PROJECT_ID?.trim(),
+      project_id: readProjectIdFromEnv(),
       client_email: email,
       private_key: privateKey,
-      token_uri: process.env.OCR_GOOGLE_TOKEN_URI?.trim() || DEFAULT_TOKEN_URI,
+      token_uri: readTokenUriFromEnv(),
     };
   }
 
-  if (jsonCredentialError) {
+  if (jsonErrors.length > 0) {
     throw new Error(
-      `${jsonCredentialError} Set a valid OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_SERVICE_ACCOUNT_JSON, OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 or OCR_GOOGLE_SERVICE_ACCOUNT_JSON.`
+      `${jsonErrors.join(" ")} Set a valid OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_SERVICE_ACCOUNT_JSON, OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 or OCR_GOOGLE_SERVICE_ACCOUNT_JSON.`
     );
   }
 
@@ -194,12 +278,12 @@ function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
 function getDocumentAiConfig(): DocumentAiConfig {
   const credential = parseServiceAccountCredentialFromEnv();
   const projectId = (
-    process.env.OCR_GOOGLE_PROJECT_ID?.trim() ||
+    readProjectIdFromEnv() ||
     credential.project_id ||
     ""
   ).trim();
-  const location = (process.env.OCR_GOOGLE_LOCATION?.trim() || DEFAULT_LOCATION).trim();
-  const processorId = (process.env.OCR_GOOGLE_PROCESSOR_ID?.trim() || "").trim();
+  const location = readLocationFromEnv().trim();
+  const processorId = readProcessorIdFromEnv().trim();
 
   if (!projectId) {
     throw new Error("Missing OCR_GOOGLE_PROJECT_ID.");
@@ -220,7 +304,10 @@ function getDocumentAiConfig(): DocumentAiConfig {
 }
 
 export function getDocumentAiRuntimeConfig() {
-  const location = (process.env.OCR_GOOGLE_LOCATION?.trim() || DEFAULT_LOCATION).trim();
+  const location = readLocationFromEnv().trim();
+  const hasProjectId = Boolean(readProjectIdFromEnv());
+  const hasProcessorId = Boolean(readProcessorIdFromEnv());
+  const credentialInput = detectCredentialInputMode();
 
   try {
     getDocumentAiConfig();
@@ -228,12 +315,19 @@ export function getDocumentAiRuntimeConfig() {
       provider: "google-document-ai",
       configured: true,
       location,
+      hasProjectId,
+      hasProcessorId,
+      credentialInput,
     };
-  } catch {
+  } catch (error) {
     return {
       provider: "google-document-ai",
       configured: false,
       location,
+      hasProjectId,
+      hasProcessorId,
+      credentialInput,
+      reason: error instanceof Error ? error.message : "Unknown OCR configuration error.",
     };
   }
 }

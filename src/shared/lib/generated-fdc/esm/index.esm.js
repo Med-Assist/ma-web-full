@@ -6,38 +6,20 @@ export const connectorConfig = {
   location: 'asia-northeast1'
 };
 
-const isDataConnectInstance = (value) =>
-  Boolean(value) && typeof value === 'object' && 'enableEmulator' in value;
-
-const validateArgsWithOptions = (
-  config,
-  dcOrVarsOrOptions,
-  varsOrOptions,
-  options,
-  hasVars
-) => {
-  if (hasVars) {
-    const hasDc = isDataConnectInstance(dcOrVarsOrOptions);
-    const parsedArgs = hasDc
-      ? validateArgs(config, dcOrVarsOrOptions, varsOrOptions, true)
-      : validateArgs(config, dcOrVarsOrOptions, undefined, true);
-
-    return {
-      ...parsedArgs,
-      options: hasDc ? options : varsOrOptions
-    };
-  }
-
-  const hasDc = isDataConnectInstance(dcOrVarsOrOptions);
-  const parsedArgs = hasDc
-    ? validateArgs(config, dcOrVarsOrOptions, undefined, false)
-    : validateArgs(config, undefined, undefined, false);
+const validateArgsWithOptions = (connectorConfig, dcOrVarsOrOptions, varsOrOptions, options, hasVars, validateVars) => {
+  const hasExplicitDc = dcOrVarsOrOptions && 'enableEmulator' in dcOrVarsOrOptions;
+  const inputVars = hasVars ? (hasExplicitDc ? varsOrOptions : dcOrVarsOrOptions) : undefined;
+  const inputOptions = hasExplicitDc ? (hasVars ? options : varsOrOptions) : (hasVars ? varsOrOptions : dcOrVarsOrOptions);
+  const parsedArgs = hasExplicitDc
+    ? validateArgs(connectorConfig, dcOrVarsOrOptions, inputVars, validateVars)
+    : validateArgs(connectorConfig, inputVars, undefined, validateVars);
 
   return {
     ...parsedArgs,
-    options: hasDc ? varsOrOptions : dcOrVarsOrOptions
+    options: inputOptions
   };
 };
+
 export const addTestPatientRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();

@@ -3,7 +3,6 @@ import {
   DocumentAiRequestError,
   getDocumentAiRuntimeConfig,
   getOcrMaxFileSizeBytes,
-  hasDocumentAiConfig,
   isSupportedOcrMimeType,
   processDocumentWithDocumentAi,
 } from "@/shared/server/document-ai";
@@ -23,6 +22,7 @@ function getMimeTypeFromFilename(filename: string) {
 
 export async function POST(request: Request) {
   try {
+    const runtimeConfig = getDocumentAiRuntimeConfig();
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -68,17 +68,18 @@ export async function POST(request: Request) {
         fileName: file.name,
         mimeType,
         source: "text-fallback",
-        ...getDocumentAiRuntimeConfig(),
+        ...runtimeConfig,
       });
     }
 
-    if (!hasDocumentAiConfig()) {
+    if (!runtimeConfig.configured) {
       return NextResponse.json(
         {
           error: "OCR service is not configured.",
           detail:
+            runtimeConfig.reason ||
             "Set OCR_GOOGLE_PROJECT_ID, OCR_GOOGLE_PROCESSOR_ID, and service account credentials. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 (or OCR_GOOGLE_SERVICE_ACCOUNT_JSON) instead of OCR_GOOGLE_APPLICATION_CREDENTIALS file paths.",
-          ...getDocumentAiRuntimeConfig(),
+          ...runtimeConfig,
         },
         { status: 503 }
       );
@@ -94,16 +95,17 @@ export async function POST(request: Request) {
       ...result,
       fileName: file.name,
       source: "document-ai",
-      ...getDocumentAiRuntimeConfig(),
+      ...runtimeConfig,
     });
   } catch (error) {
     console.error("OCR document route failed:", error);
+    const runtimeConfig = getDocumentAiRuntimeConfig();
     if (error instanceof DocumentAiRequestError) {
       return NextResponse.json(
         {
           error: "OCR upstream failed",
           detail: error.detail,
-          ...getDocumentAiRuntimeConfig(),
+          ...runtimeConfig,
         },
         { status: 502 }
       );
