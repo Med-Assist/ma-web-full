@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, FileText, HeartPulse, Phone, ShieldCheck, UserRound } from "lucide-react";
-import { getPatientWorkspace, type GetPatientWorkspaceData } from "@/shared/lib/generated-fdc";
+import {
+  getAppointments,
+  getPatientWorkspace,
+  type GetAppointmentsData,
+  type GetPatientWorkspaceData,
+} from "@/shared/lib/generated-fdc";
 import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
 import { calculateAge, getActiveDoctorUid, getDiagnosisLabel, getPriorityLabel } from "@/shared/lib/medassist-runtime";
 
@@ -13,20 +18,25 @@ type PatientWorkspaceProps = {
 
 export function PatientDetailWorkspace({ patientUid }: PatientWorkspaceProps) {
   const [workspace, setWorkspace] = useState<GetPatientWorkspaceData | null>(null);
+  const [allAppointments, setAllAppointments] = useState<GetAppointmentsData["appointments"]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    getPatientWorkspace(getMedAssistDataConnect(), {
-      doctorUid: getActiveDoctorUid(),
-    })
-      .then((response) => {
+    Promise.all([
+      getPatientWorkspace(getMedAssistDataConnect(), {
+        doctorUid: getActiveDoctorUid(),
+      }),
+      getAppointments(getMedAssistDataConnect()),
+    ])
+      .then(([workspaceResponse, appointmentsResponse]) => {
         if (!isMounted) {
           return;
         }
 
-        setWorkspace(response.data);
+        setWorkspace(workspaceResponse.data);
+        setAllAppointments(appointmentsResponse.data.appointments);
       })
       .catch((error) => {
         console.error("Không thể tải chi tiết bệnh nhân:", error);
@@ -58,11 +68,11 @@ export function PatientDetailWorkspace({ patientUid }: PatientWorkspaceProps) {
 
   const appointments = useMemo(
     () =>
-      (workspace?.appointments ?? [])
+      allAppointments
         .filter((item) => item.patientUid === patientUid)
         .slice()
         .sort((left, right) => new Date(right.scheduledAt).getTime() - new Date(left.scheduledAt).getTime()),
-    [patientUid, workspace?.appointments]
+    [allAppointments, patientUid]
   );
 
   const latestDiagnosis = diagnoses[0] ?? null;

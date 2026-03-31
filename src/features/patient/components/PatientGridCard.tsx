@@ -40,12 +40,12 @@ export const PatientGridCard = ({
     <div className="flex flex-col rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <button type="button" onClick={() => onOpen?.(patient)} className="relative">
             <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white ${patient.avatarColor}`}>
               {patient.initials}
             </div>
             <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${patient.statusColor}`} />
-          </div>
+          </button>
           <div>
             <h3 className="max-w-[130px] truncate font-bold text-slate-900">{patient.name}</h3>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">

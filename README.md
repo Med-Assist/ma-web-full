@@ -1,90 +1,87 @@
 # MedAssist V3 Frontend Setup
 
-Tài liệu này hướng dẫn cách chạy `ma-web` ở môi trường local và cấu hình các tính năng AI dùng Gemini.
+Tài liệu này hướng dẫn chạy `ma-web` local và cấu hình an toàn cho các tính năng AI/OCR.
 
 ## 1. Yêu cầu
 
-- Node.js 18 trở lên
+- Node.js 18+
+- npm
 - Git
-- VS Code hoặc editor tương đương
 
-## 2. Cài dự án
+## 2. Cài đặt
 
 ```bash
-git clone https://github.com/Med-Assist/ma-web-full.git
-cd MedAssist-v3/ma-web
+git clone <repo-url>
+cd ma-web
 npm install
 ```
 
-## 3. Tạo file môi trường
-
-Tạo file `.env.local` trong thư mục `ma-web`:
+## 3. Tạo biến môi trường
 
 ```bash
 copy .env.example .env.local
 ```
 
-Sau đó điền các biến Firebase/Data Connect cần thiết:
+Điền giá trị thực vào `.env.local` (không commit file này).
+
+### Firebase + Data Connect
 
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=medassist-v3
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-```
-
-Nếu muốn chạy với Data Connect emulator local:
-
-```env
-NEXT_PUBLIC_USE_DATACONNECT_EMULATOR=true
+NEXT_PUBLIC_USE_DATACONNECT_EMULATOR=false
 NEXT_PUBLIC_DATACONNECT_EMULATOR_HOST=127.0.0.1
 NEXT_PUBLIC_DATACONNECT_EMULATOR_PORT=9399
 ```
 
-## 4. Cấu hình Gemini
-
-Các tính năng sau hiện dùng Gemini qua API key phía server:
-
-- Chat AI trên dashboard
-- Phân tích ảnh đáy mắt ở màn `Chẩn đoán AI võng mạc`
-
-Thêm các biến sau vào `.env.local`:
+### Gemini (server-side)
 
 ```env
-GEMINI_API_KEY=AIza...
+GEMINI_API_KEY=...
 GEMINI_CHAT_MODEL=gemini-2.5-flash
 GEMINI_VISION_MODEL=gemini-2.5-flash
 ```
 
-Ghi chú:
+### OCR Google Document AI (server-side)
 
-- `GEMINI_API_KEY` là bắt buộc nếu muốn dùng AI.
-- Hai biến model là tùy chọn, có thể giữ mặc định.
-- API key chỉ dùng ở server route `/api/ai/*`, không đưa xuống client.
-- Sau khi đổi env, nhớ restart `npm run dev`.
+```env
+OCR_GOOGLE_PROJECT_ID=...
+OCR_GOOGLE_LOCATION=asia-southeast1
+OCR_GOOGLE_PROCESSOR_ID=...
+OCR_GOOGLE_TOKEN_URI=https://oauth2.googleapis.com/token
+OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=...
+OCR_MAX_FILE_SIZE_MB=12
+```
 
-## 5. Chạy local
+Gợi ý tạo `OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64`:
+
+- PowerShell:
+
+```powershell
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((Get-Content .\ocr-key.json -Raw)))
+```
+
+## 4. Chạy dự án
 
 ```bash
 npm run dev
 ```
 
-Mở:
+Mở `http://localhost:3000`.
 
-```text
-http://localhost:3000
-```
-
-## 6. Build production
+## 5. Build production
 
 ```bash
 npm run build
 ```
 
-## 7. Lưu ý
+## 6. Ghi chú bảo mật
 
-- Không commit `.env.local`
-- Không commit `node_modules`
-- Nếu vừa pull code mới và bị lỗi dependency, chạy lại `npm install`
+- Không commit `.env.local`.
+- Không đặt API key/private key trực tiếp trong source code.
+- Tất cả key AI/OCR phải ở server env và chỉ gọi qua `/api/*`.
+- Các biến `NEXT_PUBLIC_*` được phép xuất hiện trên client (đây là cấu hình public của SDK), không dùng chúng cho secret.

@@ -6,6 +6,9 @@ export type ConsultationRoomCreateMode = "standard" | "google-meet";
 
 export type ConsultationRoomCreateDraft = {
   mode: ConsultationRoomCreateMode;
+  patientUid: string;
+  scheduledDate: string;
+  startTime: string;
   title: string;
   description: string;
   membersLabel: string;
@@ -21,6 +24,7 @@ const fieldClassName =
 const CreateConsultationRoomModal = ({
   isOpen,
   isSaving,
+  patientOptions,
   values,
   onClose,
   onChange,
@@ -28,6 +32,7 @@ const CreateConsultationRoomModal = ({
 }: {
   isOpen: boolean;
   isSaving?: boolean;
+  patientOptions: { uid: string; label: string }[];
   values: ConsultationRoomCreateDraft;
   onClose: () => void;
   onChange: (field: keyof ConsultationRoomCreateDraft, value: string | boolean) => void;
@@ -101,6 +106,45 @@ const CreateConsultationRoomModal = ({
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Bệnh nhân</label>
+                <select
+                  value={values.patientUid}
+                  onChange={(event) => onChange("patientUid", event.target.value)}
+                  className={fieldClassName}
+                  required
+                >
+                  <option value="">Chọn bệnh nhân</option>
+                  {patientOptions.map((patient) => (
+                    <option key={patient.uid} value={patient.uid}>
+                      {patient.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Ngày tư vấn</label>
+                <input
+                  type="date"
+                  value={values.scheduledDate}
+                  onChange={(event) => onChange("scheduledDate", event.target.value)}
+                  className={fieldClassName}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Giờ bắt đầu</label>
+                <input
+                  type="time"
+                  value={values.startTime}
+                  onChange={(event) => onChange("startTime", event.target.value)}
+                  className={fieldClassName}
+                  required
+                />
+              </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-slate-700">Tên phòng</label>
                 <input

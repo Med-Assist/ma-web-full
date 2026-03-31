@@ -238,6 +238,12 @@ function renderResultCard({
   );
 }
 
+function formatDiagnosisHistoryLabel(diagnosis: DiagnosisRow, index: number) {
+  const examDate = diagnosis.examDate || "Không rõ ngày";
+  const stage = diagnosis.stageLabel || diagnosis.riskLevel || "Chưa phân loại";
+  return `Lần ${index + 1}: ${examDate} • ${stage}`;
+}
+
 export function AiDiagnosisWorkspace() {
   const doctorUid = getActiveDoctorUid();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -524,6 +530,7 @@ export function AiDiagnosisWorkspace() {
   const selectedPatientLabel = selectedPatient
     ? `${selectedPatient.displayName}${selectedPatient.userCode ? ` • ${selectedPatient.userCode}` : ""}`
     : "Chọn bệnh nhân";
+  const isLatestDiagnosis = !!activeDiagnosis && patientDiagnoses[0]?.id === activeDiagnosis.id;
 
   return (
     <div className="space-y-5 xl:-mx-4">
@@ -707,7 +714,7 @@ export function AiDiagnosisWorkspace() {
                       {activeDiagnosis?.examDate || "Mới nhất"}
                     </span>
                     <span className="rounded-full bg-[#8db7da] px-3 py-1 text-xs font-bold text-white">
-                      Lần chụp hiện tại
+                      {isLatestDiagnosis ? "Lần chụp mới nhất" : "Lần chụp đã chọn"}
                     </span>
                   </div>
                   <span className="text-xs font-medium text-slate-400">
@@ -756,21 +763,24 @@ export function AiDiagnosisWorkspace() {
                 <h2 className="text-[22px] font-bold tracking-tight text-slate-900">
                   Lịch sử chẩn đoán
                 </h2>
-                <div className="relative min-w-[156px]">
+              </div>
+
+              <div className="space-y-3">
+                <div className="relative">
                   <select
-                    value={selectedReference?.id || ""}
-                    onChange={(event) => setSelectedReferenceId(event.target.value)}
+                    value={activeDiagnosis?.id || ""}
+                    onChange={(event) => setSelectedDiagnosisId(event.target.value || null)}
                     className="w-full appearance-none rounded-full border border-slate-200 bg-white py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none focus:border-[#8db7da] focus:ring-4 focus:ring-[#8db7da]/10"
-                    disabled={!activeReferences.length}
+                    disabled={!patientDiagnoses.length}
                   >
-                    {activeReferences.length ? (
-                      activeReferences.map((reference) => (
-                        <option key={reference.id} value={reference.id}>
-                          {reference.label}
+                    {patientDiagnoses.length ? (
+                      patientDiagnoses.map((diagnosis, index) => (
+                        <option key={diagnosis.id} value={diagnosis.id}>
+                          {formatDiagnosisHistoryLabel(diagnosis, index)}
                         </option>
                       ))
                     ) : (
-                      <option value="">Chưa có dữ liệu</option>
+                      <option value="">Chưa có lịch sử chẩn đoán</option>
                     )}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

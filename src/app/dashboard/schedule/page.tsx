@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { type ChangeEvent, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Download, 
@@ -24,16 +24,21 @@ import {
   Trash2
 } from 'lucide-react';
 import {
+  createAppointment,
   createShiftSwapRequest,
+  getAppointments,
   getScheduleWorkspace,
   getSettingsWorkspace,
+  upsertAppointment,
+  upsertScheduleAttachment,
   upsertScheduleEvent,
+  type GetAppointmentsData,
   type GetScheduleWorkspaceData,
   type GetSettingsWorkspaceData,
   type UpsertScheduleEventVariables,
 } from "@/shared/lib/generated-fdc";
 import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
-import { createClientId, getActiveDoctorUid, nowIsoString, toIsoDateString } from "@/shared/lib/medassist-runtime";
+import { createClientId, getActiveDoctorUid, nowIsoString, readFileAsDataUrl, toIsoDateString } from "@/shared/lib/medassist-runtime";
 
 const HIDDEN_MOCK_EVENT_IDS = [
   "week-1",
@@ -65,6 +70,7 @@ type ScheduleAttachmentRow = GetScheduleWorkspaceData["scheduleAttachments"][num
 type DoctorAvailabilityRow = GetScheduleWorkspaceData["doctorAvailabilities"][number];
 type PatientProfileRow = GetScheduleWorkspaceData["patientProfiles"][number];
 type WorkingScheduleSlotRow = GetSettingsWorkspaceData["workingScheduleSlots"][number];
+type AppointmentRow = GetAppointmentsData["appointments"][number];
 type ShiftKey = "morning" | "afternoon" | "night";
 type CalendarEvent = {
   id: string;
@@ -78,6 +84,8 @@ type CalendarEvent = {
   patientName: string;
   patientId: string;
   insuranceId: string;
+  appointmentId?: string | null;
+  sourceType?: "schedule" | "appointment";
   attachments: { name: string; type: string; url?: string | null }[];
 };
 type AvailableDoctor = {
@@ -92,6 +100,19 @@ type AvailableDoctor = {
   avatarUrl?: string | null;
 };
 
+function toLocalDateString(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toLocalTimeString(date: Date) {
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${hour}:${minute}`;
+}
+
 export default function SchedulePage() {
   const [view, setView] = useState<'Ngày' | 'Tuần' | 'Tháng'>('Ngày');
   const [offset, setOffset] = useState(0);
@@ -104,6 +125,7 @@ export default function SchedulePage() {
   const [doctorAvailabilities, setDoctorAvailabilities] = useState<DoctorAvailabilityRow[]>([]);
   const [patientProfiles, setPatientProfiles] = useState<PatientProfileRow[]>([]);
   const [workingScheduleSlots, setWorkingScheduleSlots] = useState<WorkingScheduleSlotRow[]>([]);
+  const [doctorAppointments, setDoctorAppointments] = useState<AppointmentRow[]>([]);
   const [newForm, setNewForm] = useState({
     patientId: '',
     patientName: '',
@@ -117,6 +139,8 @@ export default function SchedulePage() {
   const [selectedShift, setSelectedShift] = useState<ShiftKey>('morning');
   const [availableDoctors, setAvailableDoctors] = useState<AvailableDoctor[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pendingCreateAttachments, setPendingCreateAttachments] = useState<File[]>([]);
+  const createAttachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const doctorUid = getActiveDoctorUid();
   const scheduleAttachmentsByEventId = useMemo(() => {
@@ -137,10 +161,53 @@ export default function SchedulePage() {
     return new Map(patientProfiles.map((profile) => [profile.userUid, profile]));
   }, [patientProfiles]);
 
+  const currentDoctorName = useMemo(() => {
+    const fromAvailability = doctorAvailabilities.find((item) => item.doctorUid === doctorUid)?.doctor.displayName;
+    const fallback = `Bác sĩ ${doctorUid.slice(-4)}`;
+    const resolved = fromAvailability || fallback;
+    return resolved.startsWith("BS.") ? resolved : `BS. ${resolved}`;
+  }, [doctorAvailabilities, doctorUid]);
+
+  const linkedAppointmentByScheduleEventId = useMemo(() => {
+    const map = new Map<string, AppointmentRow>();
+    const availableAppointments = doctorAppointments.slice();
+
+    scheduleEvents.forEach((event) => {
+      if (!event.patientUid) {
+        return;
+      }
+
+      const scheduleStart = new Date(`${event.scheduledDate}T${event.startTime.slice(0, 5)}:00`);
+      if (Number.isNaN(scheduleStart.getTime())) {
+        return;
+      }
+
+      const matchedIndex = availableAppointments.findIndex((appointment) => {
+        if (appointment.patientUid !== event.patientUid) {
+          return false;
+        }
+        const appointmentStart = new Date(appointment.scheduledAt);
+        if (Number.isNaN(appointmentStart.getTime())) {
+          return false;
+        }
+        return Math.abs(appointmentStart.getTime() - scheduleStart.getTime()) < 60_000;
+      });
+
+      if (matchedIndex >= 0) {
+        const [matched] = availableAppointments.splice(matchedIndex, 1);
+        if (matched) {
+          map.set(event.id, matched);
+        }
+      }
+    });
+
+    return map;
+  }, [doctorAppointments, scheduleEvents]);
+
   const customEvents = useMemo<CalendarEvent[]>(() => {
-    return scheduleEvents
+    const scheduleMappedEvents = scheduleEvents
       .filter((event) => !event.isDeleted)
-      .map((event) => {
+      .map<CalendarEvent>((event) => {
         const date = new Date(`${event.scheduledDate}T00:00:00`);
         const startTime = event.startTime.slice(0, 5);
         const endTime = event.endTime.slice(0, 5);
@@ -156,6 +223,8 @@ export default function SchedulePage() {
                   ? "red"
                   : "blue";
         const patientProfile = event.patientUid ? patientByUid.get(event.patientUid) : null;
+        const linkedAppointment = linkedAppointmentByScheduleEventId.get(event.id);
+
         return {
           id: event.id,
           title: event.title,
@@ -168,10 +237,61 @@ export default function SchedulePage() {
           patientName: event.patient?.displayName || event.patientNameOverride || "Bệnh nhân chưa xác định",
           patientId: event.patient?.userCode || event.patientUid || "N/A",
           insuranceId: event.insuranceNumber || patientProfile?.insuranceNumber || "",
+          appointmentId: linkedAppointment?.id || null,
+          sourceType: "schedule" as const,
           attachments: scheduleAttachmentsByEventId.get(event.id) || [],
         };
       });
-  }, [patientByUid, scheduleAttachmentsByEventId, scheduleEvents]);
+
+    const linkedAppointmentIds = new Set(
+      Array.from(linkedAppointmentByScheduleEventId.values()).map((appointment) => appointment.id)
+    );
+
+    const appointmentOnlyEvents = doctorAppointments
+      .filter((appointment) => !linkedAppointmentIds.has(appointment.id))
+      .map<CalendarEvent>((appointment) => {
+        const scheduledDate = new Date(appointment.scheduledAt);
+        const fallbackDate = Number.isNaN(scheduledDate.getTime()) ? new Date() : scheduledDate;
+        const resolvedEndAt = appointment.endAt
+          ? new Date(appointment.endAt)
+          : new Date(fallbackDate.getTime() + 30 * 60 * 1000);
+        const normalizedStatus = (appointment.status || "").toLowerCase();
+        const tone: CalendarEvent["type"] = normalizedStatus.includes("cancel")
+          ? "red"
+          : normalizedStatus.includes("completed")
+            ? "green"
+            : "blue";
+        const patientProfile = patientByUid.get(appointment.patientUid);
+        const startTime = toLocalTimeString(fallbackDate);
+        const endTime = Number.isNaN(resolvedEndAt.getTime()) ? startTime : toLocalTimeString(resolvedEndAt);
+        const dayLabel = toLocalDateString(fallbackDate);
+
+        return {
+          id: `appointment-${appointment.id}`,
+          title: appointment.specialty || appointment.appointmentType || `Lịch khám - ${appointment.patient.displayName}`,
+          type: tone,
+          date: new Date(`${dayLabel}T00:00:00`),
+          time: startTime,
+          startTime,
+          endTime,
+          timeString: `Ngày ${dayLabel}, ${startTime} - ${endTime}`,
+          patientName: appointment.patient.displayName || "Bệnh nhân",
+          patientId: appointment.patient.userCode || appointment.patientUid || "N/A",
+          insuranceId: patientProfile?.insuranceNumber || "",
+          appointmentId: appointment.id,
+          sourceType: "appointment" as const,
+          attachments: [],
+        };
+      });
+
+    return [...scheduleMappedEvents, ...appointmentOnlyEvents];
+  }, [
+    doctorAppointments,
+    linkedAppointmentByScheduleEventId,
+    patientByUid,
+    scheduleAttachmentsByEventId,
+    scheduleEvents,
+  ]);
 
   const patientOptions = useMemo(() => {
     const combined = new Map<string, { patientId: string; patientName: string; insuranceId: string }>();
@@ -254,15 +374,41 @@ export default function SchedulePage() {
     isDeleted: event.isDeleted,
   });
 
+  const fetchWorkspaceData = useCallback(async () => {
+    const [scheduleResponse, settingsResponse, appointmentsResponse] = await Promise.all([
+      getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid }),
+      getSettingsWorkspace(getMedAssistDataConnect(), { doctorUid }),
+      getAppointments(getMedAssistDataConnect()),
+    ]);
+
+    const scopedAppointments = appointmentsResponse.data.appointments
+      .filter((appointment) => appointment.doctorUid === doctorUid)
+      .slice()
+      .sort((left, right) => new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime());
+
+    return {
+      scheduleData: scheduleResponse.data,
+      settingsData: settingsResponse.data,
+      appointmentsData: scopedAppointments,
+    };
+  }, [doctorUid]);
+
   const applyWorkspace = (
     scheduleData: GetScheduleWorkspaceData,
     settingsData?: GetSettingsWorkspaceData,
+    appointmentsData?: AppointmentRow[],
   ) => {
     setScheduleEvents(scheduleData.scheduleEvents);
     setScheduleAttachments(scheduleData.scheduleAttachments);
     setDoctorAvailabilities(scheduleData.doctorAvailabilities);
     setPatientProfiles(scheduleData.patientProfiles);
-    setCompletedEvents(scheduleData.scheduleEvents.filter((item) => item.isCompleted).map((item) => item.id));
+    setDoctorAppointments(appointmentsData || []);
+    setCompletedEvents([
+      ...scheduleData.scheduleEvents.filter((item) => item.isCompleted).map((item) => item.id),
+      ...(appointmentsData || [])
+        .filter((item) => (item.status || "").toLowerCase().includes("completed"))
+        .map((item) => `appointment-${item.id}`),
+    ]);
     setDeletedEvents((current) => {
       const dbDeleted = scheduleData.scheduleEvents.filter((item) => item.isDeleted).map((item) => item.id);
       return Array.from(new Set([...current, ...dbDeleted]));
@@ -284,14 +430,11 @@ export default function SchedulePage() {
     let mounted = true;
     const loadWorkspace = async () => {
       try {
-        const [scheduleResponse, settingsResponse] = await Promise.all([
-          getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid }),
-          getSettingsWorkspace(getMedAssistDataConnect(), { doctorUid }),
-        ]);
+        const { scheduleData, settingsData, appointmentsData } = await fetchWorkspaceData();
         if (!mounted) {
           return;
         }
-        applyWorkspace(scheduleResponse.data, settingsResponse.data);
+        applyWorkspace(scheduleData, settingsData, appointmentsData);
       } catch (error) {
         console.error("Không thể tải dữ liệu lịch & ca trực:", error);
       }
@@ -300,7 +443,7 @@ export default function SchedulePage() {
     return () => {
       mounted = false;
     };
-  }, [doctorUid]);
+  }, [fetchWorkspaceData]);
 
   useEffect(() => {
     setAvailableDoctors(
@@ -334,13 +477,44 @@ export default function SchedulePage() {
       return;
     }
     try {
+      const createdAt = nowIsoString();
       await createShiftSwapRequest(getMedAssistDataConnect(), {
         requesterUid: doctorUid,
         targetDoctorUid: doctor.doctorUid,
         department: doctor.department,
         shiftKey: doctor.shiftKey,
-        createdAt: nowIsoString(),
+        createdAt,
       });
+
+      const now = new Date();
+      const startTime = toLocalTimeString(now);
+      const endTime = toLocalTimeString(new Date(now.getTime() + 30 * 60 * 1000));
+      const noticeTitle = `Yêu cầu đổi ca từ ${currentDoctorName}`;
+      await upsertScheduleEvent(getMedAssistDataConnect(), {
+        id: createClientId("shift-swap-notice"),
+        doctorUid: doctor.doctorUid,
+        patientUid: null,
+        title: noticeTitle,
+        eventType: "shift_swap_notice",
+        department: doctor.department,
+        scheduledDate: toIsoDateString(now),
+        startTime,
+        endTime,
+        status: "PENDING",
+        colorTone: "orange",
+        roomName: doctor.department,
+        insuranceNumber: null,
+        patientNameOverride: null,
+        timeString: `Yêu cầu đổi ca (${doctor.shiftKey})`,
+        priority: "Yêu cầu mới",
+        meetingLink: null,
+        notes: `${currentDoctorName} đã gửi yêu cầu đổi ca ${doctor.shiftKey}.`,
+        attachmentsCount: 0,
+        displayOrder: Math.floor(now.getTime() / 1000),
+        isCompleted: false,
+        isDeleted: false,
+      });
+
       setToastMessage(`Đã gửi yêu cầu đổi ca đến ${doctor.name}.`);
     } catch (error) {
       console.error("Không thể gửi yêu cầu đổi ca:", error);
@@ -389,6 +563,16 @@ export default function SchedulePage() {
     }));
   };
 
+  const handleCreateAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) {
+      return;
+    }
+
+    setPendingCreateAttachments((current) => [...current, ...files]);
+    event.target.value = "";
+  };
+
   const handleCreateSubmit = async () => {
     const matchedPatient = patientOptions.find(
       patient => patient.patientId.toLowerCase() === newForm.patientId.trim().toLowerCase()
@@ -403,10 +587,26 @@ export default function SchedulePage() {
       const userUid = (profile.userUid || "").toLowerCase();
       return userCode === normalizedInput || userUid === normalizedInput;
     });
+    if (!patientProfile?.userUid) {
+      alert("Không tìm thấy hồ sơ bệnh nhân để đồng bộ lịch hẹn.");
+      return;
+    }
+
+    const startDateTime = new Date(`${newForm.date}T${newForm.startTime}:00`);
+    const endDateTime = new Date(`${newForm.date}T${newForm.endTime}:00`);
+    if (
+      Number.isNaN(startDateTime.getTime()) ||
+      Number.isNaN(endDateTime.getTime()) ||
+      endDateTime.getTime() <= startDateTime.getTime()
+    ) {
+      alert("Khung giờ lịch khám chưa hợp lệ. Vui lòng kiểm tra lại giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+
     const payload: UpsertScheduleEventVariables = {
       id: createClientId("schedule-event"),
       doctorUid,
-      patientUid: patientProfile?.userUid || null,
+      patientUid: patientProfile.userUid,
       title: `Khám bệnh - ${matchedPatient.patientName}`,
       eventType: "consultation",
       department: selectedDepartment || null,
@@ -422,17 +622,50 @@ export default function SchedulePage() {
       priority: "Cần xử lý",
       meetingLink: null,
       notes: null,
-      attachmentsCount: 0,
+      attachmentsCount: pendingCreateAttachments.length,
       displayOrder: scheduleEvents.length + 1,
       isCompleted: false,
       isDeleted: false,
     };
 
     try {
-      await upsertScheduleEvent(getMedAssistDataConnect(), payload);
-      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
-      applyWorkspace(refreshed.data);
+      const encodedAttachmentInputs = await Promise.all(
+        pendingCreateAttachments.map(async (file, index) => ({
+          id: createClientId("schedule-attachment"),
+          eventId: payload.id,
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          fileUrl: await readFileAsDataUrl(file),
+          displayOrder: index + 1,
+        }))
+      );
+
+      await Promise.all([
+        upsertScheduleEvent(getMedAssistDataConnect(), payload),
+        createAppointment(getMedAssistDataConnect(), {
+          patientUid: patientProfile.userUid,
+          doctorUid,
+          doctorName: currentDoctorName,
+          scheduledAt: startDateTime.toISOString(),
+          endAt: endDateTime.toISOString(),
+          status: "SCHEDULED",
+          meetingLink: null,
+          symptoms: null,
+          specialty: selectedDepartment || null,
+          appointmentType: "Khám trực tiếp",
+          queueLabel: "Chờ khám",
+          currentDoctorNote: null,
+          countdownLabel: null,
+        }),
+        ...encodedAttachmentInputs.map((attachment) =>
+          upsertScheduleAttachment(getMedAssistDataConnect(), attachment)
+        ),
+      ]);
+
+      const { scheduleData, settingsData, appointmentsData } = await fetchWorkspaceData();
+      applyWorkspace(scheduleData, settingsData, appointmentsData);
       setIsCreateModalOpen(false);
+      setPendingCreateAttachments([]);
       setNewForm({
         patientId: "",
         patientName: "",
@@ -449,7 +682,7 @@ export default function SchedulePage() {
     }
   };
 
-  const handleEventClick = (eventData: any) => {
+  const handleEventClick = (eventData: unknown) => {
     setSelectedEvent(eventData as CalendarEvent);
   };
 
@@ -461,20 +694,59 @@ export default function SchedulePage() {
     if (!selectedEvent?.id) {
       return;
     }
-    const target = scheduleEvents.find((event) => event.id === selectedEvent.id);
-    if (!target) {
+    const scheduleTarget =
+      selectedEvent.sourceType === "schedule"
+        ? scheduleEvents.find((event) => event.id === selectedEvent.id)
+        : null;
+    const appointmentTarget = selectedEvent.appointmentId
+      ? doctorAppointments.find((appointment) => appointment.id === selectedEvent.appointmentId)
+      : null;
+
+    if (!scheduleTarget && !appointmentTarget) {
       closeModal();
       return;
     }
-    const nextEvent: ScheduleEventRow = {
-      ...target,
-      isCompleted: !target.isCompleted,
-      status: !target.isCompleted ? "COMPLETED" : "SCHEDULED",
-    };
+
+    const shouldMarkCompleted = scheduleTarget
+      ? !scheduleTarget.isCompleted
+      : !((appointmentTarget?.status || "").toLowerCase().includes("completed"));
+
     try {
-      await upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent));
-      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
-      applyWorkspace(refreshed.data);
+      const operations: Promise<unknown>[] = [];
+
+      if (scheduleTarget) {
+        const nextEvent: ScheduleEventRow = {
+          ...scheduleTarget,
+          isCompleted: shouldMarkCompleted,
+          status: shouldMarkCompleted ? "COMPLETED" : "SCHEDULED",
+        };
+        operations.push(upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent)));
+      }
+
+      if (appointmentTarget) {
+        operations.push(
+          upsertAppointment(getMedAssistDataConnect(), {
+            id: appointmentTarget.id,
+            patientUid: appointmentTarget.patientUid,
+            doctorUid: appointmentTarget.doctorUid ?? doctorUid,
+            doctorName: appointmentTarget.doctorName,
+            scheduledAt: appointmentTarget.scheduledAt,
+            endAt: appointmentTarget.endAt ?? null,
+            status: shouldMarkCompleted ? "COMPLETED" : "SCHEDULED",
+            meetingLink: appointmentTarget.meetingLink ?? null,
+            symptoms: appointmentTarget.symptoms ?? null,
+            specialty: appointmentTarget.specialty ?? null,
+            appointmentType: appointmentTarget.appointmentType ?? null,
+            queueLabel: shouldMarkCompleted ? "Đã khám xong" : appointmentTarget.queueLabel ?? "Chờ khám",
+            currentDoctorNote: appointmentTarget.currentDoctorNote ?? null,
+            countdownLabel: appointmentTarget.countdownLabel ?? null,
+          })
+        );
+      }
+
+      await Promise.all(operations);
+      const { scheduleData, settingsData, appointmentsData } = await fetchWorkspaceData();
+      applyWorkspace(scheduleData, settingsData, appointmentsData);
       closeModal();
     } catch (error) {
       console.error("Không thể cập nhật trạng thái lịch:", error);
@@ -486,20 +758,55 @@ export default function SchedulePage() {
     if (!selectedEvent?.id) {
       return;
     }
-    const target = scheduleEvents.find((event) => event.id === selectedEvent.id);
-    if (!target) {
+    const scheduleTarget =
+      selectedEvent.sourceType === "schedule"
+        ? scheduleEvents.find((event) => event.id === selectedEvent.id)
+        : null;
+    const appointmentTarget = selectedEvent.appointmentId
+      ? doctorAppointments.find((appointment) => appointment.id === selectedEvent.appointmentId)
+      : null;
+
+    if (!scheduleTarget && !appointmentTarget) {
       closeModal();
       return;
     }
-    const nextEvent: ScheduleEventRow = {
-      ...target,
-      isDeleted: true,
-      status: "CANCELLED",
-    };
+
     try {
-      await upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent));
-      const refreshed = await getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid });
-      applyWorkspace(refreshed.data);
+      const operations: Promise<unknown>[] = [];
+
+      if (scheduleTarget) {
+        const nextEvent: ScheduleEventRow = {
+          ...scheduleTarget,
+          isDeleted: true,
+          status: "CANCELLED",
+        };
+        operations.push(upsertScheduleEvent(getMedAssistDataConnect(), toUpsertInput(nextEvent)));
+      }
+
+      if (appointmentTarget) {
+        operations.push(
+          upsertAppointment(getMedAssistDataConnect(), {
+            id: appointmentTarget.id,
+            patientUid: appointmentTarget.patientUid,
+            doctorUid: appointmentTarget.doctorUid ?? doctorUid,
+            doctorName: appointmentTarget.doctorName,
+            scheduledAt: appointmentTarget.scheduledAt,
+            endAt: appointmentTarget.endAt ?? null,
+            status: "CANCELLED",
+            meetingLink: appointmentTarget.meetingLink ?? null,
+            symptoms: appointmentTarget.symptoms ?? null,
+            specialty: appointmentTarget.specialty ?? null,
+            appointmentType: appointmentTarget.appointmentType ?? null,
+            queueLabel: "Đã hủy",
+            currentDoctorNote: appointmentTarget.currentDoctorNote ?? null,
+            countdownLabel: appointmentTarget.countdownLabel ?? null,
+          })
+        );
+      }
+
+      await Promise.all(operations);
+      const { scheduleData, settingsData, appointmentsData } = await fetchWorkspaceData();
+      applyWorkspace(scheduleData, settingsData, appointmentsData);
       closeModal();
     } catch (error) {
       console.error("Không thể xoá lịch:", error);
@@ -1124,7 +1431,10 @@ export default function SchedulePage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-            onClick={() => setIsCreateModalOpen(false)}
+            onClick={() => {
+              setIsCreateModalOpen(false);
+              setPendingCreateAttachments([]);
+            }}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -1136,7 +1446,13 @@ export default function SchedulePage() {
             >
               <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
                 <h3 className="text-lg font-bold text-slate-900">Tạo lịch trực mới</h3>
-                <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors">
+                <button
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setPendingCreateAttachments([]);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -1225,14 +1541,40 @@ export default function SchedulePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Đính kèm tệp</label>
-                  <button type="button" className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-400 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => createAttachmentInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-400 transition-colors"
+                  >
                     <Paperclip size={16} /> Chọn tệp đính kèm
                   </button>
+                  <input
+                    ref={createAttachmentInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleCreateAttachmentChange}
+                  />
+                  {pendingCreateAttachments.length > 0 ? (
+                    <div className="mt-2 space-y-1 text-xs text-slate-600">
+                      {pendingCreateAttachments.map((file, index) => (
+                        <p key={`${file.name}-${index}`} className="truncate">
+                          {index + 1}. {file.name}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               
               <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
-                <button onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors">
+                <button
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setPendingCreateAttachments([]);
+                  }}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+                >
                   Hủy
                 </button>
                 <button onClick={handleCreateSubmit} className="flex items-center gap-2 px-4 py-2 bg-[#638BB5] text-white rounded-xl text-sm font-semibold hover:bg-[#527a9f] transition-colors shadow-sm">
@@ -1314,7 +1656,7 @@ export default function SchedulePage() {
                     <span className="text-xs font-bold uppercase tracking-wider">Tệp đính kèm</span>
                   </div>
                   <div className="space-y-2">
-                    {selectedEvent.attachments.map((file: any, idx: number) => (
+                    {selectedEvent.attachments.map((file, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-colors group">
                         <div className="flex items-center gap-3">
                           {file.type === 'pdf' ? (

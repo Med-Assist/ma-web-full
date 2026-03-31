@@ -52,6 +52,9 @@ type DashboardMessage = {
 };
 
 type DashboardAppointment = GetDashboardHomeWorkspaceData["appointments"][number];
+const DASHBOARD_DUE_APPOINTMENT_IDS_KEY = "medassist_dashboard_due_appointment_ids";
+const UPCOMING_CONSULTATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DUE_CONSULTATION_WINDOW_MS = 60 * 1000;
 
 function getAppointmentTimestamp(appointment: DashboardAppointment) {
   return new Date(appointment.scheduledAt).getTime();
@@ -59,6 +62,36 @@ function getAppointmentTimestamp(appointment: DashboardAppointment) {
 
 function isQueuedAppointment(status: string) {
   return !["completed", "cancelled", "canceled"].includes(status.toLowerCase());
+}
+
+function readDueAppointmentIds() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(DASHBOARD_DUE_APPOINTMENT_IDS_KEY) || "[]";
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((item): item is string => typeof item === "string" && Boolean(item.trim()));
+  } catch {
+    return [];
+  }
+}
+
+function persistDueAppointmentIds(ids: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(DASHBOARD_DUE_APPOINTMENT_IDS_KEY, JSON.stringify(ids));
+  } catch {
+    // Ignore storage failures in private mode or restricted environments.
+  }
 }
 
 function calculateAgeFromDob(dob?: string | null) {
@@ -94,6 +127,8 @@ export default function DashboardPage() {
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
   const [isCompletingAppointment, setIsCompletingAppointment] = useState(false);
   const [queueNotice, setQueueNotice] = useState<string | null>(null);
+  const [dueAppointmentIds, setDueAppointmentIds] = useState<string[]>(() => readDueAppointmentIds());
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
     let isMounted = true;
@@ -137,6 +172,15 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const timerId = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(timerId);
   }, []);
 
   const doctorProfile = workspace?.doctorProfiles?.[0];
@@ -306,6 +350,9 @@ export default function DashboardPage() {
   const activePatientCode = activeAppointmentSource?.patient.userCode || "Đang cập nhật";
   const activePatientDob = activePatientProfile?.dob || null;
   const activePatientAge = calculateAgeFromDob(activePatientDob);
+  const activePatientDemographic = activePatientDob
+    ? `${activePatientDob} (${activePatientAge ?? "--"} tuổi)`
+    : "Đang chờ dữ liệu từ Data Connect";
   const activePatientGender = activePatientProfile?.gender || "N/A";
   const activePatientSymptoms =
     activeAppointmentSource?.symptoms || "Chưa có mô tả triệu chứng từ Data Connect.";
@@ -324,7 +371,16 @@ export default function DashboardPage() {
     () => (workspace?.aiDiagnoses ?? []).filter((item) => item.riskLevel?.toLowerCase() === "high").length,
     [workspace?.aiDiagnoses]
   );
-  const upcomingConsultations = liveQueueAppointments.length;
+  const upcomingConsultationAppointments = useMemo(
+    () =>
+      liveQueueAppointments.filter((appointment) => {
+        const appointmentTime = getAppointmentTimestamp(appointment);
+        return appointmentTime >= nowTick && appointmentTime - nowTick <= UPCOMING_CONSULTATION_WINDOW_MS;
+      }),
+    [liveQueueAppointments, nowTick]
+  );
+  const upcomingConsultations = upcomingConsultationAppointments.length;
+  const nextUpcomingConsultation = upcomingConsultationAppointments[0] ?? null;
 
   const todaySchedule = useMemo(() => {
     return (workspace?.scheduleEvents ?? [])
@@ -342,6 +398,78 @@ export default function DashboardPage() {
         badge: event.priority || event.status,
       }));
   }, [workspace?.scheduleEvents]);
+
+  const registerDueAppointmentId = (appointmentId: string) => {
+    setDueAppointmentIds((current) => {
+      if (current.includes(appointmentId)) {
+        return current;
+      }
+
+      const next = [...current, appointmentId];
+      persistDueAppointmentIds(next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const dueAppointment = liveQueueAppointments.find((appointment) => {
+      if (dueAppointmentIds.includes(appointment.id)) {
+        return false;
+      }
+
+      const appointmentTime = getAppointmentTimestamp(appointment);
+      return nowTick >= appointmentTime && nowTick - appointmentTime < DUE_CONSULTATION_WINDOW_MS;
+    });
+
+    if (!dueAppointment) {
+      return;
+    }
+
+    const dueMessage = `Đến giờ tư vấn với ${dueAppointment.patient.displayName} (${formatShortTime(dueAppointment.scheduledAt)}).`;
+    setQueueNotice(dueMessage);
+    registerDueAppointmentId(dueAppointment.id);
+
+    if ("Notification" in window) {
+      const openConsultation = () => {
+        const targetUrl = `/dashboard/consultation?appointmentId=${encodeURIComponent(dueAppointment.id)}`;
+        window.location.href = targetUrl;
+      };
+      const showNotification = () => {
+        try {
+          const notification = new window.Notification("MedAssist - Ca tư vấn đến giờ", {
+            body: dueMessage,
+            tag: `dashboard-due-${dueAppointment.id}`,
+          });
+          notification.onclick = openConsultation;
+        } catch {
+          // Ignore browser notification errors and keep in-app notice.
+        }
+      };
+
+      if (window.Notification.permission === "granted") {
+        showNotification();
+      } else if (window.Notification.permission === "default") {
+        void window.Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            showNotification();
+          }
+        });
+      }
+    }
+  }, [dueAppointmentIds, liveQueueAppointments, nowTick]);
+
+  const handleOpenUpcomingConsultations = () => {
+    if (!nextUpcomingConsultation) {
+      router.push("/dashboard/consultation");
+      return;
+    }
+
+    router.push(`/dashboard/consultation?appointmentId=${encodeURIComponent(nextUpcomingConsultation.id)}`);
+  };
 
   const handleBellClick = () => {
     alert(
@@ -622,12 +750,16 @@ export default function DashboardPage() {
               </div>
               <span className="font-medium">{highRiskCount} Phân tích võng mạc</span>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={handleOpenUpcomingConsultations}
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur-md transition-colors hover:bg-white/20"
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                 <Calendar className="h-4 w-4" />
               </div>
               <span className="font-medium">{upcomingConsultations} Ca tư vấn sắp tới</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -715,7 +847,15 @@ export default function DashboardPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Đang thực hiện thăm khám</span>
             </div>
             <div className="mb-8 flex items-center gap-5">
-              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 text-slate-400">
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeAppointmentSource?.patientUid) {
+                    router.push(`/dashboard/patient/${activeAppointmentSource.patientUid}`);
+                  }
+                }}
+                className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 text-slate-400"
+              >
                 {activeAppointmentSource?.patient.photoURL ? (
                   <img
                     src={activeAppointmentSource.patient.photoURL}
@@ -725,17 +865,13 @@ export default function DashboardPage() {
                 ) : (
                   <span className="text-sm font-bold">BN</span>
                 )}
-              </div>
+              </button>
               <div>
                 <h2 className="mb-2 text-2xl font-bold text-slate-900">
                   {activePatientName}
                 </h2>
                 <div className="flex items-center gap-3 text-sm text-slate-500">
-                  <span>
-                    {spotlight
-                      ? `${spotlight.dob} (${spotlight.age} tuổi)`
-                      : "Đang chờ dữ liệu từ Data Connect"}
-                  </span>
+                  <span>{activePatientDemographic}</span>
                   <span className="h-1 w-1 rounded-full bg-slate-300"></span>
                   <span>{activePatientGender}</span>
                   <span className="h-1 w-1 rounded-full bg-slate-300"></span>

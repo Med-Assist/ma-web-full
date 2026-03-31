@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import ActiveAppointment, {
   type ActiveAppointmentData,
   type AppointmentAttachmentItem,
@@ -16,10 +17,13 @@ import SelectedConsultationRoom, {
 import UpcomingAppointments, { type UpcomingAppointmentItem } from "@/features/consultation/components/UpcomingAppointments";
 import type { GetConsultationWorkspaceData } from "@/shared/lib/generated-fdc";
 import {
+  createAppointment,
   getConsultationWorkspace,
+  getPatientsByDoctor,
   upsertAppointment,
   upsertAppointmentAttachment,
   upsertConsultationRoom,
+  type GetPatientsByDoctorData,
 } from "@/shared/lib/generated-fdc";
 import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
 import {
@@ -27,14 +31,17 @@ import {
   formatDateTimeLabel,
   formatShortTime,
   getActiveDoctorUid,
+  readFileAsDataUrl,
   safeClipboardCopy,
 } from "@/shared/lib/medassist-runtime";
 
 type ConsultationAppointment = GetConsultationWorkspaceData["appointments"][number];
 type ConsultationRoom = GetConsultationWorkspaceData["consultationRooms"][number];
+type PatientProfileRow = GetPatientsByDoctorData["patientProfiles"][number];
 
 const GOOGLE_MEET_LAUNCH_URL = "https://meet.google.com/new";
 const CONSULTATION_CREATED_ROOM_IDS_KEY = "medassist_consultation_created_room_ids";
+const CONSULTATION_DUE_APPOINTMENT_IDS_KEY = "medassist_consultation_due_appointment_ids";
 const ROOM_MEETING_LINK_PREFIX = "__meet_link__:";
 
 function readCreatedRoomIds() {
@@ -67,9 +74,62 @@ function persistCreatedRoomIds(ids: string[]) {
   }
 }
 
+function readDueAppointmentIds() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(CONSULTATION_DUE_APPOINTMENT_IDS_KEY) || "[]";
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((item): item is string => typeof item === "string" && Boolean(item.trim()));
+  } catch {
+    return [];
+  }
+}
+
+function persistDueAppointmentIds(ids: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(CONSULTATION_DUE_APPOINTMENT_IDS_KEY, JSON.stringify(ids));
+  } catch {
+    // Ignore storage failures in restricted/private environments.
+  }
+}
+
+function isPendingAppointmentStatus(status: string) {
+  const normalizedStatus = status.toLowerCase();
+  return normalizedStatus !== "completed" && normalizedStatus !== "cancelled" && normalizedStatus !== "canceled";
+}
+
 function isGoogleMeetRoom(room: ConsultationRoom) {
   const source = `${room.title} ${room.badge} ${room.actionLabel || ""}`.toLowerCase();
   return source.includes("google meet") || source.includes("meet");
+}
+
+function isLikelyMockRoom(room: ConsultationRoom) {
+  const source = `${room.id} ${room.title} ${room.badge} ${room.membersLabel} ${room.actionLabel || ""}`.toLowerCase();
+  return (
+    source.includes("mock")
+    || source.includes("demo")
+    || source.includes("sample")
+    || source.includes("hardcode")
+    || source.includes("seed")
+    || room.id.startsWith("room-")
+    || room.id.startsWith("consult-room-")
+    || room.id.startsWith("mock-")
+  );
+}
+
+function isRoomOwnedByDoctor(roomId: string, doctorUid: string) {
+  return roomId.startsWith(`consultation-room-${doctorUid}-`);
 }
 
 function parseRoomDescription(rawDescription: string | null | undefined) {
@@ -145,20 +205,54 @@ function createCurrentTimeLabel() {
   });
 }
 
+function toLocalDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildDateTimeFromInputs(date: string, time: string) {
+  return new Date(`${date}T${time}:00`);
+}
+
+function addMinutes(baseDate: Date, minutes: number) {
+  return new Date(baseDate.getTime() + minutes * 60 * 1000);
+}
+
+function formatRoomDisplayDate(date: Date) {
+  return date.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export default function ConsultationPage() {
   const activeDoctorUid = getActiveDoctorUid();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [patientProfiles, setPatientProfiles] = useState<PatientProfileRow[]>([]);
   const [appointments, setAppointments] = useState<GetConsultationWorkspaceData["appointments"]>([]);
   const [appointmentAttachments, setAppointmentAttachments] = useState<GetConsultationWorkspaceData["appointmentAttachments"]>([]);
   const [consultationRooms, setConsultationRooms] = useState<GetConsultationWorkspaceData["consultationRooms"]>([]);
-  const [createdRoomIds, setCreatedRoomIds] = useState<string[]>([]);
+  const [createdRoomIds, setCreatedRoomIds] = useState<string[]>(() => readCreatedRoomIds());
+  const [dueAppointmentIds, setDueAppointmentIds] = useState<string[]>(() => readDueAppointmentIds());
+  const [roomIdFromUrl, setRoomIdFromUrl] = useState<string | null>(null);
+  const [appointmentIdFromUrl, setAppointmentIdFromUrl] = useState<string | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
+  const [dueNotice, setDueNotice] = useState<string | null>(null);
   const [createRoomDraft, setCreateRoomDraft] = useState<ConsultationRoomCreateDraft>({
     mode: "standard",
+    patientUid: "",
+    scheduledDate: toLocalDateInputValue(),
+    startTime: "08:00",
     title: "",
     description: "",
     membersLabel: "",
@@ -168,33 +262,115 @@ export default function ConsultationPage() {
     openMeetingAfterCreate: false,
   });
 
+  const updateRouteState = useCallback(
+    (next: { roomId?: string | null; appointmentId?: string | null }) => {
+      const currentQuery = typeof window !== "undefined" ? window.location.search : "";
+      const params = new URLSearchParams(currentQuery);
+
+      if (next.roomId) {
+        params.set("roomId", next.roomId);
+      } else {
+        params.delete("roomId");
+      }
+
+      if (next.appointmentId) {
+        params.set("appointmentId", next.appointmentId);
+      } else {
+        params.delete("appointmentId");
+      }
+
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+
+      setRoomIdFromUrl(next.roomId || null);
+      setAppointmentIdFromUrl(next.appointmentId || null);
+    },
+    [pathname, router]
+  );
+
+  const buildInternalRoomLink = useCallback(
+    (roomId: string) => {
+      if (typeof window === "undefined") {
+        return `${pathname}?roomId=${encodeURIComponent(roomId)}`;
+      }
+
+      const target = new URL(pathname, window.location.origin);
+      target.searchParams.set("roomId", roomId);
+      return target.toString();
+    },
+    [pathname]
+  );
+
   useEffect(() => {
-    setCreatedRoomIds(readCreatedRoomIds());
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    setRoomIdFromUrl(params.get("roomId"));
+    setAppointmentIdFromUrl(params.get("appointmentId"));
   }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    getConsultationWorkspace(getMedAssistDataConnect(), {
-      doctorUid: getActiveDoctorUid(),
-    })
-      .then((response) => {
+    Promise.all([
+      getConsultationWorkspace(getMedAssistDataConnect(), {
+        doctorUid: getActiveDoctorUid(),
+      }),
+      getPatientsByDoctor(getMedAssistDataConnect(), {
+        doctorUid: getActiveDoctorUid(),
+      }),
+    ])
+      .then(([consultationResponse, patientsResponse]) => {
         if (!isMounted) {
           return;
         }
 
-        const sortedAppointments = response.data.appointments
+        const currentDoctorToken = `consultation-room-${activeDoctorUid}-`;
+        const mockRooms = consultationResponse.data.consultationRooms.filter((room) => {
+          const isForeignDoctorRoom =
+            room.id.startsWith("consultation-room-")
+            && !room.id.startsWith(currentDoctorToken)
+            && !createdRoomIds.includes(room.id);
+          return room.status !== "deleted" && (isLikelyMockRoom(room) || isForeignDoctorRoom);
+        });
+
+        if (mockRooms.length > 0) {
+          void Promise.all(
+            mockRooms.map((room) =>
+              upsertConsultationRoom(getMedAssistDataConnect(), {
+                id: room.id,
+                displayDate: room.displayDate,
+                status: "deleted",
+                badge: room.badge,
+                timeLabel: room.timeLabel,
+                title: room.title,
+                description: room.description,
+                membersLabel: room.membersLabel,
+                actionLabel: room.actionLabel || null,
+                displayOrder: room.displayOrder,
+              })
+            )
+          ).catch((error) => {
+            console.error("Không thể xóa phòng mock consultation:", error);
+          });
+        }
+
+        const sortedAppointments = consultationResponse.data.appointments
           .slice()
           .sort((left, right) => new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime());
 
-        const visibleRooms = response.data.consultationRooms
+        const visibleRooms = consultationResponse.data.consultationRooms
           .filter((room) => room.status !== "deleted")
+          .filter((room) => !mockRooms.some((mockRoom) => mockRoom.id === room.id))
           .slice()
           .sort((left, right) => left.displayOrder - right.displayOrder);
 
+        setPatientProfiles(patientsResponse.data.patientProfiles);
         setAppointments(sortedAppointments);
         setAppointmentAttachments(
-          response.data.appointmentAttachments.slice().sort((left, right) => left.displayOrder - right.displayOrder)
+          consultationResponse.data.appointmentAttachments.slice().sort((left, right) => left.displayOrder - right.displayOrder)
         );
         setConsultationRooms(visibleRooms);
         setSelectedAppointmentId((current) => current ?? sortedAppointments[0]?.id ?? null);
@@ -218,7 +394,19 @@ export default function ConsultationPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeDoctorUid, createdRoomIds]);
+
+  useEffect(() => {
+    if (appointmentIdFromUrl && appointments.some((appointment) => appointment.id === appointmentIdFromUrl)) {
+      setSelectedAppointmentId(appointmentIdFromUrl);
+    }
+  }, [appointmentIdFromUrl, appointments]);
+
+  useEffect(() => {
+    if (roomIdFromUrl && consultationRooms.some((room) => room.id === roomIdFromUrl)) {
+      setSelectedRoomId(roomIdFromUrl);
+    }
+  }, [consultationRooms, roomIdFromUrl]);
 
   useEffect(() => {
     if (!consultationRooms.length) {
@@ -254,6 +442,18 @@ export default function ConsultationPage() {
     };
   }, [activeAppointmentSource]);
 
+  const patientOptions = useMemo(
+    () =>
+      patientProfiles
+        .map((profile) => ({
+          uid: profile.userUid,
+          label: `${profile.user.displayName}${profile.user.userCode ? ` • ${profile.user.userCode}` : ""}`,
+          patient: profile.user,
+        }))
+        .sort((left, right) => left.label.localeCompare(right.label, "vi", { sensitivity: "base" })),
+    [patientProfiles]
+  );
+
   const attachments = useMemo<AppointmentAttachmentItem[]>(() => {
     if (!activeAppointmentSource) {
       return [];
@@ -270,8 +470,14 @@ export default function ConsultationPage() {
   }, [activeAppointmentSource, appointmentAttachments]);
 
   const upcomingAppointments = useMemo<UpcomingAppointmentItem[]>(() => {
+    const now = Date.now();
+
     return appointments
       .filter((appointment) => appointment.id !== activeAppointmentSource?.id)
+      .filter((appointment) => isPendingAppointmentStatus(appointment.status))
+      .filter((appointment) => new Date(appointment.scheduledAt).getTime() >= now)
+      .slice()
+      .sort((left, right) => new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime())
       .map((appointment) => ({
         id: appointment.id,
         day: formatUpcomingDayLabel(appointment.scheduledAt),
@@ -282,6 +488,81 @@ export default function ConsultationPage() {
         }`,
       }));
   }, [activeAppointmentSource?.id, appointments]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const notifyDueAppointment = (appointment: ConsultationAppointment) => {
+      const message = `Đến giờ tư vấn với ${appointment.patient.displayName} (${formatDateTimeLabel(appointment.scheduledAt)}).`;
+      setDueNotice(message);
+
+      if ("Notification" in window) {
+        const showBrowserNotification = () => {
+          try {
+            const notification = new window.Notification("MedAssist - Ca tư vấn đến giờ", {
+              body: message,
+              tag: `consultation-due-${appointment.id}`,
+            });
+
+            notification.onclick = () => {
+              window.focus();
+              updateRouteState({
+                roomId: null,
+                appointmentId: appointment.id,
+              });
+            };
+          } catch {
+            // Ignore browser notification errors and keep in-app notice.
+          }
+        };
+
+        if (window.Notification.permission === "granted") {
+          showBrowserNotification();
+        } else if (window.Notification.permission === "default") {
+          void window.Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              showBrowserNotification();
+            }
+          });
+        }
+      }
+    };
+
+    const checkDueAppointments = () => {
+      const now = Date.now();
+      const dueAppointment = appointments
+        .filter((appointment) => isPendingAppointmentStatus(appointment.status))
+        .slice()
+        .sort((left, right) => new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime())
+        .find((appointment) => {
+          const scheduledAtMs = new Date(appointment.scheduledAt).getTime();
+          const dueWindowStart = scheduledAtMs;
+          const dueWindowEnd = scheduledAtMs + 60 * 1000;
+          return now >= dueWindowStart && now < dueWindowEnd && !dueAppointmentIds.includes(appointment.id);
+        });
+
+      if (!dueAppointment) {
+        return;
+      }
+
+      setDueAppointmentIds((current) => {
+        if (current.includes(dueAppointment.id)) {
+          return current;
+        }
+
+        const next = [...current, dueAppointment.id];
+        persistDueAppointmentIds(next);
+        return next;
+      });
+      notifyDueAppointment(dueAppointment);
+    };
+
+    checkDueAppointments();
+    const timerId = window.setInterval(checkDueAppointments, 30_000);
+    return () => window.clearInterval(timerId);
+  }, [appointments, dueAppointmentIds, updateRouteState]);
 
   const timelineItems = useMemo<ConsultationTimelineItem[]>(() => {
     return consultationRooms.map<ConsultationTimelineItem>((room: ConsultationRoom) => ({
@@ -311,9 +592,10 @@ export default function ConsultationPage() {
 
     const parsed = parseRoomDescription(selectedRoom.description);
     const fallbackMeetingLink = parsed.meetingLink
-      || (isGoogleMeetRoom(selectedRoom) ? activeAppointmentSource?.meetingLink || GOOGLE_MEET_LAUNCH_URL : null);
-    const canDelete =
-      createdRoomIds.includes(selectedRoom.id) || selectedRoom.id.startsWith(`consultation-room-${activeDoctorUid}-`);
+      || (isGoogleMeetRoom(selectedRoom)
+        ? activeAppointmentSource?.meetingLink || GOOGLE_MEET_LAUNCH_URL
+        : buildInternalRoomLink(selectedRoom.id));
+    const canDelete = createdRoomIds.includes(selectedRoom.id) || isRoomOwnedByDoctor(selectedRoom.id, activeDoctorUid);
 
     return {
       id: selectedRoom.id,
@@ -327,7 +609,7 @@ export default function ConsultationPage() {
       meetingLink: fallbackMeetingLink,
       canDelete,
     };
-  }, [activeAppointmentSource?.meetingLink, activeDoctorUid, createdRoomIds, selectedRoom]);
+  }, [activeAppointmentSource?.meetingLink, activeDoctorUid, buildInternalRoomLink, createdRoomIds, selectedRoom]);
 
   const registerCreatedRoom = (roomId: string) => {
     setCreatedRoomIds((current) => {
@@ -354,20 +636,23 @@ export default function ConsultationPage() {
   };
 
   const isRoomCreatedByDoctor = (room: ConsultationRoom) =>
-    createdRoomIds.includes(room.id) || room.id.startsWith(`consultation-room-${activeDoctorUid}-`);
+    createdRoomIds.includes(room.id) || isRoomOwnedByDoctor(room.id, activeDoctorUid);
 
-  const handleAddAttachment = async () => {
+  const handleAddAttachment = async (file: File) => {
     if (!activeAppointmentSource) {
       alert("Chưa có cuộc hẹn nào để thêm hồ sơ.");
       return;
     }
 
+    const fileName = file.name?.trim() || `Tệp tư vấn ${attachments.length + 1}`;
+    const fileType = file.type || "application/octet-stream";
+
     const nextAttachment = {
       id: createClientId("appointment-attachment"),
       appointmentId: activeAppointmentSource.id,
-      fileName: `Ghi chú tư vấn ${attachments.length + 1}`,
-      fileType: "text/plain",
-      fileUrl: null,
+      fileName,
+      fileType,
+      fileUrl: await readFileAsDataUrl(file),
       displayOrder: attachments.length + 1,
     };
 
@@ -382,35 +667,6 @@ export default function ConsultationPage() {
     }
   };
 
-  const syncActiveAppointmentMeetingLink = async (meetingLink: string) => {
-    if (!activeAppointmentSource) {
-      return;
-    }
-
-    await upsertAppointment(getMedAssistDataConnect(), {
-      id: activeAppointmentSource.id,
-      patientUid: activeAppointmentSource.patientUid,
-      doctorUid: activeAppointmentSource.doctorUid ?? getActiveDoctorUid(),
-      doctorName: activeAppointmentSource.doctorName,
-      scheduledAt: activeAppointmentSource.scheduledAt,
-      endAt: activeAppointmentSource.endAt ?? null,
-      status: activeAppointmentSource.status,
-      meetingLink,
-      symptoms: activeAppointmentSource.symptoms ?? null,
-      specialty: activeAppointmentSource.specialty ?? null,
-      appointmentType: activeAppointmentSource.appointmentType ?? null,
-      queueLabel: activeAppointmentSource.queueLabel ?? null,
-      currentDoctorNote: activeAppointmentSource.currentDoctorNote ?? null,
-      countdownLabel: activeAppointmentSource.countdownLabel ?? null,
-    });
-
-    setAppointments((current) =>
-      current.map((appointment) =>
-        appointment.id === activeAppointmentSource.id ? { ...appointment, meetingLink } : appointment
-      )
-    );
-  };
-
   const buildCreateRoomDraft = (mode: ConsultationRoomCreateMode): ConsultationRoomCreateDraft => {
     const hasActiveRoom = consultationRooms.some((room) => room.status === "active");
     const defaultBadge = mode === "google-meet" ? "Google Meet" : hasActiveRoom ? "Sắp diễn ra" : "Đang diễn ra";
@@ -418,14 +674,23 @@ export default function ConsultationPage() {
       mode === "google-meet"
         ? "Mở Google Meet để hội chẩn trực tuyến với bệnh nhân."
         : "Phòng tư vấn được tạo từ giao diện web để chuẩn bị phiên khám tiếp theo.";
+    const anchorDate = activeAppointmentSource ? new Date(activeAppointmentSource.scheduledAt) : new Date();
+    const defaultDate = Number.isNaN(anchorDate.getTime()) ? new Date() : anchorDate;
+    const defaultPatientUid = activeAppointmentSource?.patientUid || patientOptions[0]?.uid || "";
+    const defaultStartTime = `${String(defaultDate.getHours()).padStart(2, "0")}:${String(defaultDate.getMinutes()).padStart(2, "0")}`;
+    const defaultEndTime = addMinutes(defaultDate, 30);
+    const defaultTimeLabel = `${defaultStartTime} - ${String(defaultEndTime.getHours()).padStart(2, "0")}:${String(defaultEndTime.getMinutes()).padStart(2, "0")}`;
 
     return {
       mode,
+      patientUid: defaultPatientUid,
+      scheduledDate: toLocalDateInputValue(defaultDate),
+      startTime: defaultStartTime,
       title: mode === "google-meet" ? "Phòng Google Meet" : "Phòng tư vấn mới",
       description: defaultDescription,
       membersLabel: mode === "google-meet" ? "Bác sĩ + bệnh nhân" : "1 bác sĩ",
       badge: defaultBadge,
-      timeLabel: createCurrentTimeLabel(),
+      timeLabel: defaultTimeLabel,
       meetingLink: mode === "google-meet" ? GOOGLE_MEET_LAUNCH_URL : activeAppointmentSource?.meetingLink || "",
       openMeetingAfterCreate: mode === "google-meet",
     };
@@ -443,10 +708,26 @@ export default function ConsultationPage() {
       return;
     }
 
-    const status = consultationRooms.some((room) => room.status === "active") ? "scheduled" : "active";
+    const selectedPatient = patientOptions.find((patient) => patient.uid === createRoomDraft.patientUid);
+    if (!selectedPatient) {
+      alert("Vui lòng chọn bệnh nhân cho ca tư vấn.");
+      return;
+    }
+
+    const startAt = buildDateTimeFromInputs(createRoomDraft.scheduledDate, createRoomDraft.startTime);
+    if (Number.isNaN(startAt.getTime())) {
+      alert("Ngày hoặc giờ bắt đầu chưa hợp lệ.");
+      return;
+    }
+
+    const endAt = addMinutes(startAt, 30);
+    const now = new Date();
+    const status = now >= startAt && now <= endAt ? "active" : "scheduled";
     const meetingLinkFromForm = createRoomDraft.meetingLink.trim();
+    const roomId = createClientId(`consultation-room-${activeDoctorUid}`);
+    const generatedRoomLink = buildInternalRoomLink(roomId);
     const meetingLink =
-      meetingLinkFromForm || (createRoomDraft.mode === "google-meet" ? GOOGLE_MEET_LAUNCH_URL : "");
+      meetingLinkFromForm || (createRoomDraft.mode === "google-meet" ? GOOGLE_MEET_LAUNCH_URL : generatedRoomLink);
     const badge =
       createRoomDraft.badge.trim()
       || (createRoomDraft.mode === "google-meet"
@@ -458,35 +739,81 @@ export default function ConsultationPage() {
       || (createRoomDraft.mode === "google-meet"
         ? "Mở Google Meet để hội chẩn trực tuyến với bệnh nhân."
         : "Phòng tư vấn được tạo từ giao diện web để chuẩn bị phiên khám tiếp theo.");
+    const formattedStartTime = `${String(startAt.getHours()).padStart(2, "0")}:${String(startAt.getMinutes()).padStart(2, "0")}`;
+    const formattedEndTime = `${String(endAt.getHours()).padStart(2, "0")}:${String(endAt.getMinutes()).padStart(2, "0")}`;
+    const roomTimeLabel = createRoomDraft.timeLabel.trim() || `${formattedStartTime} - ${formattedEndTime}`;
+    const roomMembersLabel =
+      createRoomDraft.membersLabel.trim() || `Bác sĩ + ${selectedPatient.patient.displayName}`;
+    const appointmentDoctorName = activeAppointmentSource?.doctorName || "Bác sĩ MedAssist";
 
     const nextRoom = {
-      id: createClientId(`consultation-room-${activeDoctorUid}`),
-      displayDate: createTimelineDateLabel(),
+      id: roomId,
+      displayDate: formatRoomDisplayDate(startAt),
       status,
       badge,
-      timeLabel: createRoomDraft.timeLabel.trim() || createCurrentTimeLabel(),
+      timeLabel: roomTimeLabel,
       title,
       description: buildRoomDescription(description, meetingLink),
-      membersLabel: createRoomDraft.membersLabel.trim() || "Bác sĩ",
+      membersLabel: roomMembersLabel,
       actionLabel: createRoomDraft.mode === "google-meet" ? "Mở Meet" : "Xem",
       displayOrder: consultationRooms.length + 1,
     };
 
     setIsCreatingRoom(true);
     try {
+      const appointmentResult = await createAppointment(getMedAssistDataConnect(), {
+        patientUid: selectedPatient.uid,
+        doctorUid: activeDoctorUid,
+        doctorName: appointmentDoctorName,
+        scheduledAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        status: "SCHEDULED",
+        meetingLink,
+        symptoms: null,
+        specialty: "Tư vấn trực tuyến",
+        appointmentType: "Tư vấn trực tiếp",
+        queueLabel: "Ca tư vấn sắp tới",
+        currentDoctorNote: null,
+        countdownLabel: null,
+      });
+      const createdAppointmentId = appointmentResult.data.appointment_insert.id;
+
       await upsertConsultationRoom(getMedAssistDataConnect(), nextRoom);
       setConsultationRooms((current) => [...current, nextRoom].sort((left, right) => left.displayOrder - right.displayOrder));
       registerCreatedRoom(nextRoom.id);
+      setAppointments((current) =>
+        [...current, {
+          id: createdAppointmentId,
+          patientUid: selectedPatient.uid,
+          doctorUid: activeDoctorUid,
+          doctorName: appointmentDoctorName,
+          scheduledAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
+          status: "SCHEDULED",
+          meetingLink,
+          symptoms: null,
+          specialty: "Tư vấn trực tuyến",
+          appointmentType: "Tư vấn trực tiếp",
+          queueLabel: "Ca tư vấn sắp tới",
+          countdownLabel: null,
+          currentDoctorNote: null,
+          patient: selectedPatient.patient,
+        }].sort((left, right) => new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime())
+      );
+      setSelectedAppointmentId(createdAppointmentId);
       setSelectedRoomId(nextRoom.id);
-
-      if (meetingLink) {
-        await syncActiveAppointmentMeetingLink(meetingLink);
-      }
+      updateRouteState({
+        roomId: nextRoom.id,
+        appointmentId: createdAppointmentId,
+      });
 
       setIsCreateRoomModalOpen(false);
 
-      if (createRoomDraft.openMeetingAfterCreate && meetingLink) {
-        window.open(meetingLink, "_blank", "noopener,noreferrer");
+      if (createRoomDraft.openMeetingAfterCreate) {
+        const launchLink = meetingLink;
+        if (launchLink) {
+          window.open(launchLink, "_blank", "noopener,noreferrer");
+        }
       }
     } catch (error) {
       console.error("Không thể tạo phòng consultation:", error);
@@ -498,6 +825,10 @@ export default function ConsultationPage() {
 
   const handleSelectRoom = (roomId: string) => {
     setSelectedRoomId(roomId);
+    updateRouteState({
+      roomId,
+      appointmentId: activeAppointmentSource?.id || selectedAppointmentId,
+    });
   };
 
   const handleDeleteSelectedRoom = async () => {
@@ -533,6 +864,10 @@ export default function ConsultationPage() {
       setConsultationRooms((current) => current.filter((room) => room.id !== selectedRoom.id));
       unregisterCreatedRoom(selectedRoom.id);
       setSelectedRoomId(null);
+      updateRouteState({
+        roomId: null,
+        appointmentId: activeAppointmentSource?.id || selectedAppointmentId,
+      });
     } catch (error) {
       console.error("Không thể xóa phòng tư vấn:", error);
       alert("Không thể xóa phòng lúc này.");
@@ -570,6 +905,11 @@ export default function ConsultationPage() {
   return (
     <div className="flex min-h-full flex-col bg-[#f5f7fb]">
       <div className="flex-1 px-5 py-6 lg:px-7 lg:py-7">
+        {dueNotice ? (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            {dueNotice}
+          </div>
+        ) : null}
         {isLoading ? (
           <div className="rounded-[34px] border border-slate-200/80 bg-white p-8 text-center text-slate-500 shadow-[0_12px_32px_rgba(148,163,184,0.08)]">
             Đang tải dữ liệu tư vấn...
@@ -584,7 +924,13 @@ export default function ConsultationPage() {
                   onOpenMeeting={handleOpenSelectedRoomMeeting}
                   onDeleteRoom={handleDeleteSelectedRoom}
                   isDeleting={deletingRoomId === selectedRoomDetails?.id}
-                  onBackToAppointment={() => setSelectedRoomId(null)}
+                  onBackToAppointment={() => {
+                    setSelectedRoomId(null);
+                    updateRouteState({
+                      roomId: null,
+                      appointmentId: activeAppointmentSource?.id || selectedAppointmentId,
+                    });
+                  }}
                 />
               ) : (
                 <ActiveAppointment
@@ -599,6 +945,10 @@ export default function ConsultationPage() {
                 onSelect={(appointmentId) => {
                   setSelectedAppointmentId(appointmentId);
                   setSelectedRoomId(null);
+                  updateRouteState({
+                    roomId: null,
+                    appointmentId,
+                  });
                 }}
               />
             </div>
@@ -620,6 +970,10 @@ export default function ConsultationPage() {
       <CreateConsultationRoomModal
         isOpen={isCreateRoomModalOpen}
         isSaving={isCreatingRoom}
+        patientOptions={patientOptions.map((patient) => ({
+          uid: patient.uid,
+          label: patient.label,
+        }))}
         values={createRoomDraft}
         onClose={() => setIsCreateRoomModalOpen(false)}
         onChange={handleCreateRoomDraftChange}

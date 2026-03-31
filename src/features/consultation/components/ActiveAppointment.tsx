@@ -1,5 +1,6 @@
 "use client";
 
+import { type ChangeEvent, useRef } from "react";
 import { AlertCircle, Copy, FileText, MessageSquare, PlusCircle, Video } from "lucide-react";
 import { safeClipboardCopy } from "@/shared/lib/medassist-runtime";
 
@@ -29,9 +30,11 @@ const ActiveAppointment = ({
 }: {
   appointment: ActiveAppointmentData | null;
   attachments: AppointmentAttachmentItem[];
-  onAddAttachment: () => void;
+  onAddAttachment: (file: File) => void;
   onCreateGoogleMeetRoom: () => void;
 }) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   if (!appointment) {
     return (
       <section className="rounded-[34px] border border-slate-200/80 bg-white p-6 shadow-[0_12px_32px_rgba(148,163,184,0.08)] lg:p-8">
@@ -59,6 +62,14 @@ const ActiveAppointment = ({
     }
 
     window.open(appointment.meetingLink, "_blank", "noopener,noreferrer");
+  };
+
+  const handleAttachmentFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onAddAttachment(file);
+    }
+    event.target.value = "";
   };
 
   return (
@@ -124,9 +135,19 @@ const ActiveAppointment = ({
 
         <div className="mb-4 flex items-center justify-between gap-4">
           <h4 className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#7083a5]">Hồ sơ liên quan ({attachments.length})</h4>
-          <button type="button" onClick={onAddAttachment} className="text-sm font-semibold text-[#8bb1d6] transition-colors hover:text-[#6f9fcd]">
-            + Thêm mới
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-sm font-semibold text-[#8bb1d6] transition-colors hover:text-[#6f9fcd]"
+          >
+            + Chọn tệp đính kèm
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleAttachmentFileChange}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
