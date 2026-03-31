@@ -7,34 +7,35 @@ export const connectorConfig = {
 };
 
 const isDataConnectInstance = (value) =>
-  Boolean(value && typeof value === 'object' && typeof value._useGeneratedSdk === 'function');
+  Boolean(value) && typeof value === 'object' && 'enableEmulator' in value;
 
 const validateArgsWithOptions = (
   config,
   dcOrVarsOrOptions,
   varsOrOptions,
   options,
-  validateVars
+  hasVars
 ) => {
-  const parsed = validateArgs(
-    config,
-    dcOrVarsOrOptions,
-    validateVars ? varsOrOptions : undefined,
-    validateVars
-  );
+  if (hasVars) {
+    const hasDc = isDataConnectInstance(dcOrVarsOrOptions);
+    const parsedArgs = hasDc
+      ? validateArgs(config, dcOrVarsOrOptions, varsOrOptions, true)
+      : validateArgs(config, dcOrVarsOrOptions, undefined, true);
 
-  let resolvedOptions = options;
-  if (resolvedOptions === undefined) {
-    if (varsOrOptions !== undefined && (!validateVars || !isDataConnectInstance(dcOrVarsOrOptions))) {
-      resolvedOptions = varsOrOptions;
-    } else if (!validateVars && !isDataConnectInstance(dcOrVarsOrOptions)) {
-      resolvedOptions = dcOrVarsOrOptions;
-    }
+    return {
+      ...parsedArgs,
+      options: hasDc ? options : varsOrOptions
+    };
   }
 
+  const hasDc = isDataConnectInstance(dcOrVarsOrOptions);
+  const parsedArgs = hasDc
+    ? validateArgs(config, dcOrVarsOrOptions, undefined, false)
+    : validateArgs(config, undefined, undefined, false);
+
   return {
-    ...parsed,
-    options: resolvedOptions,
+    ...parsedArgs,
+    options: hasDc ? varsOrOptions : dcOrVarsOrOptions
   };
 };
 export const addTestPatientRef = (dc) => {

@@ -690,6 +690,33 @@ export default function SchedulePage() {
     setSelectedEvent(null);
   };
 
+  const isPdfAttachment = (file: { name: string; type: string; url?: string | null }) => {
+    const normalizedType = (file.type || "").toLowerCase();
+    const normalizedName = (file.name || "").toLowerCase();
+    return normalizedType.includes("pdf") || normalizedName.endsWith(".pdf");
+  };
+
+  const openAttachment = (file: { name: string; type: string; url?: string | null }) => {
+    if (!file.url) {
+      alert("Tệp đính kèm này chưa có đường dẫn để xem.");
+      return;
+    }
+
+    window.open(file.url, "_blank", "noopener,noreferrer");
+  };
+
+  const downloadAttachment = (file: { name: string; type: string; url?: string | null }) => {
+    if (!file.url) {
+      alert("Tệp đính kèm này chưa có đường dẫn để tải.");
+      return;
+    }
+
+    const anchor = document.createElement("a");
+    anchor.href = file.url;
+    anchor.download = file.name || "tep-dinh-kem";
+    anchor.click();
+  };
+
   const handleMarkComplete = async () => {
     if (!selectedEvent?.id) {
       return;
@@ -1659,7 +1686,7 @@ export default function SchedulePage() {
                     {selectedEvent.attachments.map((file, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-colors group">
                         <div className="flex items-center gap-3">
-                          {file.type === 'pdf' ? (
+                          {isPdfAttachment(file) ? (
                             <FileText size={18} className="text-red-500" />
                           ) : (
                             <ImageIcon size={18} className="text-blue-500" />
@@ -1667,8 +1694,22 @@ export default function SchedulePage() {
                           <span className="text-sm font-medium text-slate-700">{file.name}</span>
                         </div>
                         <div className="flex items-center gap-1 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-1.5 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"><Eye size={16} /></button>
-                          <button className="p-1.5 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"><Download size={16} /></button>
+                          <button
+                            type="button"
+                            onClick={() => openAttachment(file)}
+                            disabled={!file.url}
+                            className="p-1.5 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => downloadAttachment(file)}
+                            disabled={!file.url}
+                            className="p-1.5 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Download size={16} />
+                          </button>
                         </div>
                       </div>
                     ))}
