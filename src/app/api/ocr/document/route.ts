@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         {
           error: "OCR service is not configured.",
           detail:
-            "Set OCR_GOOGLE_PROJECT_ID, OCR_GOOGLE_PROCESSOR_ID and service account env vars (or OCR_GOOGLE_APPLICATION_CREDENTIALS) in .env.local.",
+            "Set OCR_GOOGLE_PROJECT_ID, OCR_GOOGLE_PROCESSOR_ID, and service account credentials. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 (or OCR_GOOGLE_SERVICE_ACCOUNT_JSON) instead of OCR_GOOGLE_APPLICATION_CREDENTIALS file paths.",
           ...getDocumentAiRuntimeConfig(),
         },
         { status: 503 }

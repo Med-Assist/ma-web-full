@@ -99,9 +99,18 @@ function parseCredentialFromJson(rawJson: string, sourceLabel: string): ServiceA
 }
 
 function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
-  const encodedJson = process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64?.trim();
-  const rawJson = process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON?.trim();
+  const encodedJson = (
+    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
+    ""
+  ).trim();
+  const rawJson = (
+    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_JSON ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
+    ""
+  ).trim();
   let jsonCredentialError: string | null = null;
+  let pathCredentialError: string | null = null;
 
   if (encodedJson || rawJson) {
     const decoded = encodedJson ? decodeBase64Utf8(encodedJson) : rawJson || "";
@@ -126,23 +135,34 @@ function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
 
   if (credentialPath) {
     const resolvedCredentialPath = resolve(credentialPath);
-    if (!existsSync(resolvedCredentialPath)) {
-      throw new Error(
-        `OCR credential file does not exist at path: ${resolvedCredentialPath}.`
-      );
+    if (existsSync(resolvedCredentialPath)) {
+      const credentialRaw = readFileSync(resolvedCredentialPath, "utf8").trim();
+      if (!credentialRaw) {
+        pathCredentialError = `OCR credential file is empty at path: ${resolvedCredentialPath}.`;
+      } else {
+        try {
+          return parseCredentialFromJson(credentialRaw, resolvedCredentialPath);
+        } catch (error) {
+          pathCredentialError =
+            error instanceof Error ? error.message : "Unable to parse OCR credential file.";
+        }
+      }
+    } else {
+      pathCredentialError = `OCR credential file does not exist at path: ${resolvedCredentialPath}.`;
     }
-
-    const credentialRaw = readFileSync(resolvedCredentialPath, "utf8").trim();
-    if (!credentialRaw) {
-      throw new Error(`OCR credential file is empty at path: ${resolvedCredentialPath}.`);
-    }
-
-    return parseCredentialFromJson(credentialRaw, resolvedCredentialPath);
   }
 
-  const email = process.env.OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
+  const email = (
+    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
+    ""
+  ).trim();
   const privateKey = normalizePrivateKey(
-    process.env.OCR_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim() || ""
+    (
+      process.env.OCR_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ||
+      process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ||
+      ""
+    ).trim()
   );
 
   if (email && privateKey) {
@@ -156,12 +176,18 @@ function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
 
   if (jsonCredentialError) {
     throw new Error(
-      `${jsonCredentialError} Set a valid OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY.`
+      `${jsonCredentialError} Set a valid OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_SERVICE_ACCOUNT_JSON, OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 or OCR_GOOGLE_SERVICE_ACCOUNT_JSON.`
+    );
+  }
+
+  if (pathCredentialError) {
+    throw new Error(
+      `${pathCredentialError} Set OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64) or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY instead. On Vercel, do not use OCR_GOOGLE_APPLICATION_CREDENTIALS file paths.`
     );
   }
 
   throw new Error(
-    "Missing OCR service account credential. Set OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY."
+    "Missing OCR service account credential. Set OCR_GOOGLE_SERVICE_ACCOUNT_JSON(_BASE64), OCR_GOOGLE_SERVICE_ACCOUNT_JSON, OCR_GOOGLE_APPLICATION_CREDENTIALS, or OCR_GOOGLE_SERVICE_ACCOUNT_EMAIL/PRIVATE_KEY. On Vercel, prefer OCR_GOOGLE_SERVICE_ACCOUNT_JSON_BASE64."
   );
 }
 
