@@ -67,8 +67,26 @@ function buildLinkedJobId(appointmentId: string) {
   return `digit-job-${appointmentId}`;
 }
 
+function fixPossibleMojibake(text: string) {
+  if (!/[ÃÂá»]/.test(text)) {
+    return text;
+  }
+
+  try {
+    const bytes = new Uint8Array(Array.from(text, (char) => char.charCodeAt(0) & 0xff));
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    const vietnamesePattern =
+      /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/gi;
+    const decodedScore = (decoded.match(vietnamesePattern) || []).length;
+    const originalScore = (text.match(vietnamesePattern) || []).length;
+    return decodedScore > originalScore ? decoded : text;
+  } catch {
+    return text;
+  }
+}
+
 function sanitizeDocumentBody(body: string) {
-  return body.replace(/\u0000/g, "").trim();
+  return fixPossibleMojibake(body).replace(/\u0000/g, "").trim();
 }
 
 function isLikelySupportedScanFile(file: File) {
@@ -110,20 +128,20 @@ function buildDocumentContext(body: string, fileName: string) {
 
   const facilityName =
     findFirstMatch(lines, [
-      /(?:bá»‡nh viá»‡n|benh vien|phÃ²ng khÃ¡m|phong kham|hospital|clinic)\s*[:\-]\s*(.+)$/i,
-      /^((?:bá»‡nh viá»‡n|benh vien|phÃ²ng khÃ¡m|phong kham).+)$/i,
-    ]) || "Bá»‡nh viá»‡n Äa khoa Quá»‘c táº¿";
+      /(?:bệnh viện|benh vien|phòng khám|phong kham|hospital|clinic)\s*[:\-]\s*(.+)$/i,
+      /^((?:bệnh viện|benh vien|phòng khám|phong kham).+)$/i,
+    ]) || "Bệnh viện Đa khoa Quốc tế";
 
   const patientName =
-    findFirstMatch(lines, [/(:?há» tÃªn|há» vÃ  tÃªn|ho ten|ho va ten|bá»‡nh nhÃ¢n|benh nhan|patient)\s*[:\-]\s*(.+)$/i]) ||
-    "Bá»‡nh nhÃ¢n chÆ°a Ä‘á»‹nh danh";
+    findFirstMatch(lines, [/(:?họ tên|họ và tên|ho ten|ho va ten|bệnh nhân|benh nhan|patient)\s*[:\-]\s*(.+)$/i]) ||
+    "Bệnh nhân chưa định danh";
 
   const doctorName =
-    findFirstMatch(lines, [/(?:bÃ¡c sÄ©|bac si|doctor)\s*[:\-]\s*(.+)$/i]) || "BÃ¡c sÄ© Ä‘ang cáº­p nháº­t";
+    findFirstMatch(lines, [/(?:bác sĩ|bac si|doctor)\s*[:\-]\s*(.+)$/i]) || "Bác sĩ đang cập nhật";
 
   const examDate =
     findFirstMatch(lines, [
-      /(?:ngÃ y khÃ¡m|ngÃ y chá»‰ Ä‘á»‹nh|ngÃ y xÃ©t nghiá»‡m|ngay kham|ngay chi dinh|ngay xet nghiem|date)\s*[:\-]\s*([0-3]?\d[\/\.-][01]?\d[\/\.-]\d{2,4})$/i,
+      /(?:ngày khám|ngày chỉ định|ngày xét nghiệm|ngay kham|ngay chi dinh|ngay xet nghiem|date)\s*[:\-]\s*([0-3]?\d[\/\.-][01]?\d[\/\.-]\d{2,4})$/i,
     ]) || new Date().toLocaleDateString("vi-VN");
 
   return {
@@ -156,7 +174,7 @@ function buildPrintableReportHtml(params: {
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <title>BÃ¡o cÃ¡o OCR - ${escapeHtml(params.patientName)}</title>
+    <title>Báo cáo OCR - ${escapeHtml(params.patientName)}</title>
     <style>
       body { font-family: "Segoe UI", Arial, sans-serif; padding: 24px; color: #0f172a; }
       h1 { margin: 0 0 12px; font-size: 24px; }
@@ -167,17 +185,17 @@ function buildPrintableReportHtml(params: {
     </style>
   </head>
   <body>
-    <h1>BÃ¡o cÃ¡o sá»‘ hÃ³a OCR</h1>
+    <h1>Báo cáo số hóa OCR</h1>
     <p class="meta">
-      <strong>CÆ¡ sá»Ÿ y táº¿:</strong> ${escapeHtml(params.facilityName)}<br />
-      <strong>Bá»‡nh nhÃ¢n:</strong> ${escapeHtml(params.patientName)}<br />
-      <strong>NgÃ y khÃ¡m:</strong> ${escapeHtml(params.examDate)}<br />
-      <strong>BÃ¡c sÄ© chá»‰ Ä‘á»‹nh:</strong> ${escapeHtml(params.doctorName)}<br />
-      <strong>TÃ i liá»‡u gá»‘c:</strong> ${escapeHtml(params.sourceDocumentTitle)}
+      <strong>Cơ sở y tế:</strong> ${escapeHtml(params.facilityName)}<br />
+      <strong>Bệnh nhân:</strong> ${escapeHtml(params.patientName)}<br />
+      <strong>Ngày khám:</strong> ${escapeHtml(params.examDate)}<br />
+      <strong>Bác sĩ chỉ định:</strong> ${escapeHtml(params.doctorName)}<br />
+      <strong>Tài liệu gốc:</strong> ${escapeHtml(params.sourceDocumentTitle)}
     </p>
-    <div class="label">VÄƒn báº£n OCR Ä‘Ã£ trÃ­ch xuáº¥t</div>
-    <div class="content">${escapeHtml(params.extractedText || "ChÆ°a cÃ³ ná»™i dung OCR.")}</div>
-    <div class="foot">In lÃºc: ${new Date().toLocaleString("vi-VN")}</div>
+    <div class="label">Văn bản OCR đã trích xuất</div>
+    <div class="content">${escapeHtml(params.extractedText || "Chưa có nội dung OCR.")}</div>
+    <div class="foot">In lúc: ${new Date().toLocaleString("vi-VN")}</div>
   </body>
 </html>`;
 }
@@ -217,7 +235,7 @@ export function RecordDigitizationWorkspace() {
         setWorkspace(response.data);
         setSelectedJobId(response.data.digitizationJobs[0]?.id ?? null);
       })
-      .catch((error) => console.error("KhÃ´ng thá»ƒ táº£i workspace sá»‘ hÃ³a:", error));
+      .catch((error) => console.error("Không thể tải workspace số hóa:", error));
 
     return () => {
       mounted = false;
@@ -241,7 +259,7 @@ export function RecordDigitizationWorkspace() {
             : nextWaitingAppointments[0]?.id ?? null
         );
       })
-      .catch((error) => console.error("KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ£i danh sÃƒÂ¡ch chÃ¡Â»Â:", error));
+      .catch((error) => console.error("Không thể tải danh sách chờ:", error));
 
     return () => {
       mounted = false;
@@ -266,7 +284,7 @@ export function RecordDigitizationWorkspace() {
         if (selectedJobId !== selectedLinkedJob.id) {
           setSelectedJobId(selectedLinkedJob.id);
         }
-        setEditableExtractedText(selectedLinkedJob.sourceDocumentBody ?? "");
+        setEditableExtractedText(sanitizeDocumentBody(selectedLinkedJob.sourceDocumentBody ?? ""));
         return;
       }
 
@@ -274,7 +292,7 @@ export function RecordDigitizationWorkspace() {
       return;
     }
 
-    setEditableExtractedText(job?.sourceDocumentBody ?? "");
+    setEditableExtractedText(sanitizeDocumentBody(job?.sourceDocumentBody ?? ""));
   }, [job?.id, job?.sourceDocumentBody, jobs, selectedAppointment, selectedJobId]);
 
   const openScanPicker = () => {
@@ -290,7 +308,7 @@ export function RecordDigitizationWorkspace() {
 
   const uploadFile = async (file: File) => {
     setIsUploading(true);
-    setUploadStatus(`Äang OCR tÃ i liá»‡u ${file.name}...`);
+    setUploadStatus(`Đang OCR tài liệu ${file.name}...`);
 
     try {
       const formData = new FormData();
@@ -303,21 +321,21 @@ export function RecordDigitizationWorkspace() {
       const payload = (await response.json().catch(() => ({}))) as OcrApiResponse;
 
       if (!response.ok) {
-        throw new Error(payload.detail || payload.error || "KhÃ´ng thá»ƒ xá»­ lÃ½ OCR.");
+        throw new Error(payload.detail || payload.error || "Không thể xử lý OCR.");
       }
 
       const ocrText = sanitizeDocumentBody(payload.text || "");
       const body =
         ocrText ||
         (await readFileAsText(file).catch(
-          () => `TÃ i liá»‡u ${file.name} Ä‘Ã£ Ä‘Æ°á»£c tiáº¿p nháº­n vÃ  lÆ°u cho bÆ°á»›c xá»­ lÃ½ OCR.`
+          () => `Tài liệu ${file.name} đã được tiếp nhận và lưu cho bước xử lý OCR.`
         ));
 
       const persistedBody = body.slice(0, 2500);
       const nextJobId = selectedAppointment ? buildLinkedJobId(selectedAppointment.id) : createClientId("digit-job");
       const documentContext = buildDocumentContext(body, file.name);
       const sourceLabel =
-        payload.source === "document-ai" ? "Google Document AI" : "TrÃ¬nh phÃ¢n tÃ­ch vÄƒn báº£n";
+        payload.source === "document-ai" ? "Google Document AI" : "Trình phân tích văn bản";
 
       const targetPatientName = selectedAppointment?.patient.displayName || documentContext.patientName;
       const targetDoctorName = selectedAppointment?.doctorName || documentContext.doctorName;
@@ -331,7 +349,7 @@ export function RecordDigitizationWorkspace() {
 
       await upsertDigitizationJob(getMedAssistDataConnect(), {
         id: nextJobId,
-        title: selectedAppointment ? `OCR - ${targetPatientName}` : "OCR hoan tat",
+        title: selectedAppointment ? `OCR - ${targetPatientName}` : "OCR hoàn tất",
         subtitle: subtitleParts.join(" - "),
         progressPercent: 100,
         facilityName: documentContext.facilityName,
@@ -341,8 +359,8 @@ export function RecordDigitizationWorkspace() {
         sourceDocumentTitle: file.name,
         sourceDocumentBody: persistedBody,
         historyLabel: selectedAppointment
-          ? `OCR cho ${targetPatientName} luc ${new Date().toLocaleTimeString("vi-VN")}`
-          : `OCR thanh cong luc ${new Date().toLocaleTimeString("vi-VN")}`,
+          ? `OCR cho ${targetPatientName} lúc ${new Date().toLocaleTimeString("vi-VN")}`
+          : `OCR thành công lúc ${new Date().toLocaleTimeString("vi-VN")}`,
       });
 
       const scanPreviewUrl = URL.createObjectURL(file);
@@ -376,15 +394,15 @@ export function RecordDigitizationWorkspace() {
       setEditableExtractedText(persistedBody);
       setUploadStatus(
         selectedAppointment
-          ? `OCR hoan tat cho ${targetPatientName} bang ${sourceLabel}.`
-          : `OCR hoan tat bang ${sourceLabel}.`
+          ? `OCR hoàn tất cho ${targetPatientName} bằng ${sourceLabel}.`
+          : `OCR hoàn tất bằng ${sourceLabel}.`
       );
     } catch (error) {
-      console.error("KhÃ´ng thá»ƒ OCR tÃ i liá»‡u:", error);
+      console.error("Không thể OCR tài liệu:", error);
       const message =
-        error instanceof Error ? error.message : "KhÃ´ng thá»ƒ OCR tÃ i liá»‡u á»Ÿ thá»i Ä‘iá»ƒm hiá»‡n táº¡i.";
+        error instanceof Error ? error.message : "Không thể OCR tài liệu ở thời điểm hiện tại.";
       setUploadStatus(message);
-      alert(`KhÃ´ng thá»ƒ sá»‘ hÃ³a tÃ i liá»‡u: ${message}`);
+      alert(`Không thể số hóa tài liệu: ${message}`);
     } finally {
       setIsUploading(false);
       setIsScanDropActive(false);
@@ -396,7 +414,7 @@ export function RecordDigitizationWorkspace() {
     if (!file) return;
 
     if (!isLikelySupportedScanFile(file)) {
-      setUploadStatus(`Äá»‹nh dáº¡ng ${file.name} chÆ°a há»— trá»£ cho khung scan. Vui lÃ²ng chá»n áº£nh hoáº·c PDF.`);
+      setUploadStatus(`Định dạng ${file.name} chưa hỗ trợ cho khung scan. Vui lòng chọn ảnh hoặc PDF.`);
       return;
     }
 
@@ -436,8 +454,8 @@ export function RecordDigitizationWorkspace() {
     const targetJobId = selectedAppointment ? buildLinkedJobId(selectedAppointment.id) : job?.id;
     if (!targetJobId) return;
 
-    const targetPatientName = selectedAppointment?.patient.displayName || job?.patientName || "Benh nhan";
-    const targetDoctorName = selectedAppointment?.doctorName || job?.doctorName || "Bac si";
+    const targetPatientName = selectedAppointment?.patient.displayName || job?.patientName || "Bệnh nhân";
+    const targetDoctorName = selectedAppointment?.doctorName || job?.doctorName || "Bác sĩ";
     const targetExamDate = selectedAppointment
       ? new Date(selectedAppointment.scheduledAt).toLocaleDateString("vi-VN")
       : job?.examDate || new Date().toLocaleDateString("vi-VN");
@@ -445,16 +463,16 @@ export function RecordDigitizationWorkspace() {
     try {
       await upsertDigitizationJob(getMedAssistDataConnect(), {
         id: targetJobId,
-        title: selectedAppointment ? `OCR - ${targetPatientName}` : job?.title || "OCR hoan tat",
+        title: selectedAppointment ? `OCR - ${targetPatientName}` : job?.title || "OCR hoàn tất",
         subtitle: job?.subtitle || "OCR text",
         progressPercent: 100,
-        facilityName: job?.facilityName || "Benh vien Da khoa Quoc te",
+        facilityName: job?.facilityName || "Bệnh viện Đa khoa Quốc tế",
         patientName: targetPatientName,
         examDate: targetExamDate,
         doctorName: targetDoctorName,
         sourceDocumentTitle: job?.sourceDocumentTitle || "ocr-manual.txt",
         sourceDocumentBody: normalizedText || job?.sourceDocumentBody || "",
-        historyLabel: `Da dong bo luc ${new Date().toLocaleTimeString("vi-VN")}`,
+        historyLabel: `Đã đồng bộ lúc ${new Date().toLocaleTimeString("vi-VN")}`,
       });
 
       const [nextWorkspace, nextDashboard] = await Promise.all([
@@ -470,10 +488,10 @@ export function RecordDigitizationWorkspace() {
         setSelectedAppointmentId(selectedAppointment.id);
       }
       setSelectedJobId(targetJobId);
-      alert(`Da luu du lieu OCR cho ${targetPatientName}.`);
+      alert(`Đã lưu dữ liệu OCR cho ${targetPatientName}.`);
     } catch (error) {
-      console.error("KhÃ´ng thá»ƒ Ä‘á»“ng bá»™ job sá»‘ hÃ³a:", error);
-      alert("KhÃ´ng thá»ƒ lÆ°u dá»¯ liá»‡u vÃ o há»“ sÆ¡ bá»‡nh Ã¡n lÃºc nÃ y.");
+      console.error("Không thể đồng bộ job số hóa:", error);
+      alert("Không thể lưu dữ liệu vào hồ sơ bệnh án lúc này.");
     }
   };
 
@@ -482,7 +500,7 @@ export function RecordDigitizationWorkspace() {
 
     const reportWindow = window.open("", "_blank", "noopener,noreferrer,width=980,height=1080");
     if (!reportWindow) {
-      alert("TrÃ¬nh duyá»‡t Ä‘ang cháº·n popup. HÃ£y cho phÃ©p popup Ä‘á»ƒ in bÃ¡o cÃ¡o.");
+      alert("Trình duyệt đang chặn popup. Hãy cho phép popup để in báo cáo.");
       return;
     }
 
@@ -505,7 +523,7 @@ export function RecordDigitizationWorkspace() {
   if (!job) {
     return (
       <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-sm font-medium text-slate-500 shadow-[0_14px_32px_rgba(148,163,184,0.08)]">
-        ChÆ°a cÃ³ tÃ i liá»‡u sá»‘ hÃ³a nÃ o trong Data Connect.
+        Chưa có tài liệu số hóa nào trong Data Connect.
       </section>
     );
   }
@@ -522,9 +540,9 @@ export function RecordDigitizationWorkspace() {
 
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <h1 className="text-[38px] font-bold tracking-tight text-slate-900">Sá»‘ hÃ³a há»“ sÆ¡ bá»‡nh Ã¡n</h1>
+          <h1 className="text-[38px] font-bold tracking-tight text-slate-900">Số hóa hồ sơ bệnh án</h1>
           <p className="mt-2 text-lg text-slate-500">
-            Khung trÃ¡i hiá»ƒn thá»‹ scan gá»‘c. Khung pháº£i chá»‰ hiá»ƒn thá»‹ vÄƒn báº£n OCR Ä‘á»ƒ báº¡n xem vÃ  chá»‰nh sá»­a.
+            Khung trái hiển thị scan gốc. Khung phải chỉ hiển thị văn bản OCR để bạn xem và chỉnh sửa.
           </p>
           {uploadStatus ? (
             <p className="mt-3 flex items-center gap-2 text-sm text-[#5f8ebf]">
@@ -546,7 +564,7 @@ export function RecordDigitizationWorkspace() {
             }`}
           >
             <Upload className="h-5 w-5 text-slate-500" />
-            {isUploading ? "Äang OCR..." : "Táº£i tÃ i liá»‡u má»›i"}
+            {isUploading ? "Đang OCR..." : "Tải tài liệu mới"}
           </button>
 
           <button
@@ -558,7 +576,7 @@ export function RecordDigitizationWorkspace() {
             }
             className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#507fa8] to-[#6a9bc6] px-6 py-4 text-base font-semibold text-white shadow-[0_14px_28px_rgba(80,127,168,0.26)] hover:-translate-y-0.5"
           >
-            <Download className="h-5 w-5" /> Xuáº¥t dá»¯ liá»‡u
+            <Download className="h-5 w-5" /> Xuất dữ liệu
           </button>
 
           <button
@@ -566,7 +584,7 @@ export function RecordDigitizationWorkspace() {
             onClick={printReport}
             className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
-            <Printer className="h-5 w-5 text-slate-500" /> In bÃ¡o cÃ¡o
+            <Printer className="h-5 w-5 text-slate-500" /> In báo cáo
           </button>
         </div>
       </div>
@@ -574,19 +592,19 @@ export function RecordDigitizationWorkspace() {
       <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_32px_rgba(148,163,184,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b94bf]">Danh sach cho</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b94bf]">Danh sách chờ</p>
             <p className="text-sm text-slate-600">
               {selectedAppointment
-                ? `Dang kham: ${selectedAppointment.patient.displayName}`
-                : "Chua chon benh nhan kham."}
+                ? `Đang khám: ${selectedAppointment.patient.displayName}`
+                : "Chưa chọn bệnh nhân khám."}
             </p>
           </div>
-          <p className="text-sm font-medium text-slate-500">{waitingAppointments.length} benh nhan co lich kham</p>
+          <p className="text-sm font-medium text-slate-500">{waitingAppointments.length} bệnh nhân có lịch khám</p>
         </div>
 
         {waitingAppointments.length === 0 ? (
           <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-            Hien tai khong co benh nhan nao duoc tao lich kham.
+            Hiện tại không có bệnh nhân nào được tạo lịch khám.
           </p>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -614,7 +632,7 @@ export function RecordDigitizationWorkspace() {
                       if (existingLinkedJob) {
                         setSelectedJobId(existingLinkedJob.id);
                       }
-                      setUploadStatus(`Da chon kham cho ${appointment.patient.displayName}.`);
+                      setUploadStatus(`Đã chọn khám cho ${appointment.patient.displayName}.`);
                     }}
                     className={`mt-3 rounded-xl px-4 py-2 text-xs font-semibold ${
                       isActive
@@ -622,7 +640,7 @@ export function RecordDigitizationWorkspace() {
                         : "border border-[#b9d2ee] bg-white text-[#5f8ebf] hover:bg-[#eff6ff]"
                     }`}
                   >
-                    {isActive ? "Dang kham" : "Chon kham"}
+                    {isActive ? "Đang khám" : "Chọn khám"}
                   </button>
                 </article>
               );
@@ -636,7 +654,7 @@ export function RecordDigitizationWorkspace() {
           <div className="flex flex-wrap items-center justify-between gap-3 px-2">
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-[#6793bf]" />
-              <h2 className="text-[28px] font-bold tracking-tight text-slate-900">TÃ i liá»‡u gá»‘c (Scan)</h2>
+              <h2 className="text-[28px] font-bold tracking-tight text-slate-900">Tài liệu gốc (Scan)</h2>
             </div>
             <div className="flex items-center gap-3 text-slate-400">
               <button
@@ -686,12 +704,12 @@ export function RecordDigitizationWorkspace() {
                     : "border-[#b9d2ee] bg-white text-[#5f8ebf] hover:bg-[#eff6ff]"
                 }`}
               >
-                {isUploading ? "Äang OCR..." : "Chá»n hoáº·c tháº£ file"}
+                {isUploading ? "Đang OCR..." : "Chọn hoặc thả file"}
               </button>
 
               {isScanDropActive ? (
                 <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-[16px] border-2 border-dashed border-[#6b94bf] bg-[#e9f2ff]/70 px-4 text-center text-sm font-semibold text-[#4d7ea7]">
-                  Tháº£ file vÃ o Ä‘Ã¢y Ä‘á»ƒ OCR vÃ  xem ngay trong khung scan
+                  Thả file vào đây để OCR và xem ngay trong khung scan
                 </div>
               ) : null}
 
@@ -712,7 +730,7 @@ export function RecordDigitizationWorkspace() {
                   ) : (
                     <div className="mx-auto flex min-h-[320px] max-w-[540px] flex-col items-center justify-center rounded-[10px] border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-[0_20px_45px_rgba(100,116,139,0.22)]">
                       <p className="text-sm font-semibold text-slate-700">{selectedScanPreview.fileName}</p>
-                      <p className="mt-2 text-xs">Äá»‹nh dáº¡ng nÃ y chÆ°a xem trá»±c tiáº¿p Ä‘Æ°á»£c trong khung scan.</p>
+                      <p className="mt-2 text-xs">Định dạng này chưa xem trực tiếp được trong khung scan.</p>
                     </div>
                   )
                 ) : (
@@ -720,8 +738,8 @@ export function RecordDigitizationWorkspace() {
                     <p className="text-sm font-semibold text-slate-700">{job.sourceDocumentTitle}</p>
                     <p className="mt-2 text-xs">
                       {sourceLooksLikeText
-                        ? "Job nÃ y dÃ¹ng file .txt nÃªn khÃ´ng cÃ³ áº£nh gá»‘c Ä‘á»ƒ hiá»ƒn thá»‹."
-                        : "áº¢nh gá»‘c sáº½ hiá»‡n khi báº¡n táº£i áº£nh/PDF trá»±c tiáº¿p trong phiÃªn hiá»‡n táº¡i."}
+                        ? "Job này dùng file .txt nên không có ảnh gốc để hiển thị."
+                        : "Ảnh gốc sẽ hiện khi bạn tải ảnh/PDF trực tiếp trong phiên hiện tại."}
                     </p>
                   </div>
                 )}
@@ -745,12 +763,12 @@ export function RecordDigitizationWorkspace() {
         <div className="space-y-4">
           <div className="flex items-center gap-3 px-2">
             <FileText className="h-5 w-5 text-[#6793bf]" />
-            <h2 className="text-[28px] font-bold tracking-tight text-slate-900">VÄƒn báº£n Ä‘Ã£ quÃ©t OCR</h2>
+            <h2 className="text-[28px] font-bold tracking-tight text-slate-900">Văn bản đã quét OCR</h2>
           </div>
 
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_32px_rgba(148,163,184,0.1)]">
             <div className="mb-2 text-[13px] font-bold uppercase tracking-[0.16em] text-[#6b94bf]">
-              Ná»™i dung OCR (cÃ³ thá»ƒ chá»‰nh sá»­a)
+              Nội dung OCR (có thể chỉnh sửa)
             </div>
             <textarea
               value={editableExtractedText}
@@ -768,14 +786,14 @@ export function RecordDigitizationWorkspace() {
           onClick={() => setSelectedJobId(jobs[0]?.id || null)}
           className="px-4 py-3 text-base font-medium text-slate-400 hover:text-slate-600"
         >
-          Há»§y bá»
+          Hủy bỏ
         </button>
         <button
           type="button"
           onClick={saveToMedicalRecord}
           className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#507fa8] to-[#6a9bc6] px-7 py-4 text-base font-semibold text-white shadow-[0_14px_28px_rgba(80,127,168,0.26)] hover:-translate-y-0.5"
         >
-          <Save className="h-5 w-5" /> LÆ°u vÄƒn báº£n OCR
+          <Save className="h-5 w-5" /> Lưu văn bản OCR
         </button>
       </div>
     </section>
