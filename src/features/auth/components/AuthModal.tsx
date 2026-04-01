@@ -16,6 +16,7 @@ import { auth } from "../../../shared/lib/firebase";
 import { createUser } from "../../../shared/lib/generated-fdc";
 import { getMedAssistDataConnect } from "../../../shared/lib/dataconnect";
 import { rememberActiveDoctorUid } from "../../../shared/lib/medassist-runtime";
+import { rememberActiveRole } from "../../../shared/lib/medassist-role";
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -172,6 +173,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
       if (isLogin) {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         rememberActiveDoctorUid(userCredential.user.uid);
+        rememberActiveRole(role);
         alert("\u0110\u0103ng nh\u1eadp th\u00e0nh c\u00f4ng! Ch\u00e0o m\u1eebng tr\u1edf l\u1ea1i MedAssist.");
         onClose();
         router.push("/dashboard");
@@ -179,6 +181,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         rememberActiveDoctorUid(user.uid);
+        rememberActiveRole(role);
         await ensureDataConnectUserRecord(user, role, user.providerData[0]?.providerId || "password", true);
 
         alert("T\u1ea1o t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng! D\u1eef li\u1ec7u \u0111\u00e3 \u0111\u01b0\u1ee3c l\u01b0u tr\u1eef an to\u00e0n.");
@@ -202,6 +205,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalP
       const user = userCredential.user;
 
       rememberActiveDoctorUid(user.uid);
+      rememberActiveRole(role);
       await ensureDataConnectUserRecord(user, role, user.providerData[0]?.providerId || "google.com", false);
 
       alert("Đăng nhập bằng Google thành công! Chào mừng bạn trở lại MedAssist.");

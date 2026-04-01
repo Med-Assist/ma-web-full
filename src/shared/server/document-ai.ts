@@ -224,8 +224,8 @@ function parseServiceAccountCredentialFromEnv(): ServiceAccountCredential {
 
   if (credentialPath) {
     const resolvedCredentialPath = credentialPath;
-    if (existsSync(resolvedCredentialPath)) {
-      const credentialRaw = readFileSync(resolvedCredentialPath, "utf8").trim();
+    if (existsSync(/*turbopackIgnore: true*/ resolvedCredentialPath)) {
+      const credentialRaw = readFileSync(/*turbopackIgnore: true*/ resolvedCredentialPath, "utf8").trim();
       if (!credentialRaw) {
         pathCredentialError = "OCR credential file is empty.";
       } else {

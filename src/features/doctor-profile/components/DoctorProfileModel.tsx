@@ -2,81 +2,312 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Camera, CheckCircle2, Edit3, FileBadge, Headphones, Save, Scan, Settings, ShieldCheck, TrendingUp, Upload, UploadCloud } from "lucide-react";
+import {
+  Building2,
+  Camera,
+  CheckCircle2,
+  Edit3,
+  FileBadge,
+  Headphones,
+  Save,
+  Scan,
+  Settings,
+  ShieldCheck,
+  TrendingUp,
+  Upload,
+  UploadCloud,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   createUser,
-  createSupportRequest,
   getDoctorProfileWorkspace,
+  getPatientWorkspace,
+  getScheduleWorkspace,
   type GetDoctorProfileWorkspaceData,
+  type GetPatientWorkspaceData,
+  type GetScheduleWorkspaceData,
   upsertDoctorProfile,
 } from "@/shared/lib/generated-fdc";
 import { getMedAssistDataConnect } from "@/shared/lib/dataconnect";
-import { getActiveDoctorUid, nowIsoString, readFileAsDataUrl } from "@/shared/lib/medassist-runtime";
 import { auth } from "@/shared/lib/firebase";
+import { getActiveDoctorUid, nowIsoString, readFileAsDataUrl } from "@/shared/lib/medassist-runtime";
+import { buildSupportMailto } from "@/shared/lib/support";
 
-const FormField = ({ label, name, value, isEditing, onChange }: { label: string; name: string; value: string; isEditing: boolean; onChange: (name: string, value: string) => void }) => (
-  <div className="border-b border-slate-100 pb-3 relative group"><label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">{label}</label>{isEditing ? <input type="text" value={value} onChange={(e) => onChange(name, e.target.value)} className="w-full text-slate-800 font-medium bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#638BB5]" /> : <div className="text-slate-800 font-medium">{value}</div>}</div>
-);
+type EditableProfile = {
+  id: string;
+  fullName: string;
+  dob: string;
+  gender: string;
+  phone: string;
+  specialty: string;
+  certNumber: string;
+  bio: string;
+  avatarUrl: string;
+  verificationStatus: string;
+  verificationDocumentName: string;
+  verificationDocumentDataUrl: string;
+};
+
+type ActivityMetric = {
+  id: string;
+  label: string;
+  helper: string;
+  countLabel: string;
+  percent: number;
+};
+
+function FormField({
+  label,
+  name,
+  value,
+  isEditing,
+  multiline = false,
+  onChange,
+}: {
+  label: string;
+  name: keyof EditableProfile;
+  value: string;
+  isEditing: boolean;
+  multiline?: boolean;
+  onChange: (name: keyof EditableProfile, value: string) => void;
+}) {
+  return (
+    <div className="relative border-b border-slate-100 pb-3">
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </label>
+      {isEditing ? (
+        multiline ? (
+          <textarea
+            value={value}
+            onChange={(event) => onChange(name, event.target.value)}
+            rows={4}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-[#638BB5]"
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={(event) => onChange(name, event.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-medium text-slate-800 outline-none transition-all focus:ring-2 focus:ring-[#638BB5]"
+          />
+        )
+      ) : (
+        <div className="min-h-[28px] text-sm font-medium text-slate-800">
+          {value || "Chưa cập nhật"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function buildInitialProfile(doctorUid: string): EditableProfile {
+  return {
+    id: `profile-${doctorUid}`,
+    fullName: "",
+    dob: "",
+    gender: "",
+    phone: "",
+    specialty: "",
+    certNumber: "",
+    bio: "",
+    avatarUrl: "",
+    verificationStatus: "verified",
+    verificationDocumentName: "",
+    verificationDocumentDataUrl: "",
+  };
+}
+
+function normalizePercentage(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
 export function DoctorProfileModel() {
   const router = useRouter();
   const doctorUid = getActiveDoctorUid();
-  const [workspace, setWorkspace] = useState<GetDoctorProfileWorkspaceData | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const [profile, setProfile] = useState({ id: `profile-${doctorUid}`, fullName: "", dob: "", gender: "", phone: "", specialty: "", certNumber: "", bio: "", avatarUrl: "", verificationStatus: "verified", verificationDocumentName: "", verificationDocumentDataUrl: "" });
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const verifyInputRef = useRef<HTMLInputElement>(null);
 
+  const [workspace, setWorkspace] = useState<GetDoctorProfileWorkspaceData | null>(null);
+  const [patientWorkspace, setPatientWorkspace] = useState<GetPatientWorkspaceData | null>(null);
+  const [scheduleWorkspace, setScheduleWorkspace] = useState<GetScheduleWorkspaceData | null>(null);
+  const [profile, setProfile] = useState<EditableProfile>(() => buildInitialProfile(doctorUid));
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+
   useEffect(() => {
     let mounted = true;
-    getDoctorProfileWorkspace(getMedAssistDataConnect(), { doctorUid }).then((response) => {
-      if (!mounted) return;
-      setWorkspace(response.data);
-      const doctor = response.data.doctorProfiles[0];
-      if (doctor) {
-        setProfile({
-          id: doctor.id,
-          fullName: doctor.fullName,
-          dob: doctor.dob || "",
-          gender: doctor.gender || "",
-          phone: doctor.phone || "",
-          specialty: doctor.specialty || "",
-          certNumber: doctor.certNumber || "",
-          bio: doctor.bio || "",
-          avatarUrl: doctor.avatarUrl || "",
-          verificationStatus: doctor.verificationStatus,
-          verificationDocumentName: doctor.verificationDocumentName || "",
-          verificationDocumentDataUrl: doctor.verificationDocumentDataUrl || "",
-        });
+
+    const loadBundle = async () => {
+      try {
+        const [doctorResponse, patientResponse, scheduleResponse] = await Promise.all([
+          getDoctorProfileWorkspace(getMedAssistDataConnect(), { doctorUid }),
+          getPatientWorkspace(getMedAssistDataConnect(), { doctorUid }),
+          getScheduleWorkspace(getMedAssistDataConnect(), { doctorUid }),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        setWorkspace(doctorResponse.data);
+        setPatientWorkspace(patientResponse.data);
+        setScheduleWorkspace(scheduleResponse.data);
+
+        const doctor = doctorResponse.data.doctorProfiles[0];
+        if (doctor) {
+          setProfile({
+            id: doctor.id,
+            fullName: doctor.fullName || "",
+            dob: doctor.dob || "",
+            gender: doctor.gender || "",
+            phone: doctor.phone || "",
+            specialty: doctor.specialty || "",
+            certNumber: doctor.certNumber || "",
+            bio: doctor.bio || "",
+            avatarUrl: doctor.avatarUrl || "",
+            verificationStatus: doctor.verificationStatus || "verified",
+            verificationDocumentName: doctor.verificationDocumentName || "",
+            verificationDocumentDataUrl: doctor.verificationDocumentDataUrl || "",
+          });
+        }
+      } catch (error) {
+        console.error("Khong the tai ho so bac si:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    }).catch((error) => console.error("Không thể tải hồ sơ bác sĩ:", error));
-    return () => { mounted = false; };
+    };
+
+    void loadBundle();
+
+    return () => {
+      mounted = false;
+    };
   }, [doctorUid]);
 
   useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 3000);
-    return () => window.clearTimeout(timer);
+    if (!toast) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timerId);
   }, [toast]);
 
-  const metrics = useMemo(() => workspace?.doctorProfileMetrics ?? [], [workspace?.doctorProfileMetrics]);
+  const doctorProfile = workspace?.doctorProfiles[0] ?? null;
+  const doctorEmail = auth.currentUser?.email?.trim() || `${doctorUid}@medassist.local`;
+
+  const activityMetrics = useMemo<ActivityMetric[]>(() => {
+    const appointments = patientWorkspace?.appointments ?? [];
+    const trackedPatients = patientWorkspace?.patientProfiles ?? [];
+    const diagnoses = patientWorkspace?.aiDiagnoses ?? [];
+    const scheduleEvents = (scheduleWorkspace?.scheduleEvents ?? []).filter((event) => !event.isDeleted);
+
+    const activeAppointments = appointments.filter((appointment) => {
+      const normalizedStatus = appointment.status.toLowerCase();
+      return !["completed", "cancelled", "canceled"].includes(normalizedStatus);
+    });
+    const completedAppointments = appointments.filter(
+      (appointment) => appointment.status.toLowerCase() === "completed"
+    ).length;
+    const upcomingAppointments = activeAppointments.filter(
+      (appointment) => new Date(appointment.scheduledAt).getTime() >= Date.now()
+    ).length;
+    const uniquePatientsWithAppointments = new Set(
+      appointments.map((appointment) => appointment.patientUid)
+    ).size;
+    const highRiskPatients = new Set(
+      diagnoses
+        .filter((diagnosis) => diagnosis.riskLevel?.toLowerCase() === "high")
+        .map((diagnosis) => diagnosis.patientUid)
+    ).size;
+
+    const todayLabel = new Date().toLocaleDateString("en-CA");
+    const todaySchedules = scheduleEvents.filter((event) => event.scheduledDate === todayLabel).length;
+
+    return [
+      {
+        id: "completed-appointments",
+        label: "Ca da hoan tat",
+        helper: "Tong so lich kham da duoc danh dau hoan thanh.",
+        countLabel: `${completedAppointments}/${appointments.length} ca`,
+        percent: appointments.length
+          ? normalizePercentage((completedAppointments / appointments.length) * 100)
+          : 0,
+      },
+      {
+        id: "upcoming-appointments",
+        label: "Ca sap toi",
+        helper: "Lich tu van con hieu luc trong cac ca dang cho xu ly.",
+        countLabel: `${upcomingAppointments} ca`,
+        percent: activeAppointments.length
+          ? normalizePercentage((upcomingAppointments / activeAppointments.length) * 100)
+          : 0,
+      },
+      {
+        id: "tracked-patients",
+        label: "Benh nhan dang theo doi",
+        helper: "So ho so bac si dang phu trach co lich kham phat sinh.",
+        countLabel: `${uniquePatientsWithAppointments}/${trackedPatients.length} ho so`,
+        percent: trackedPatients.length
+          ? normalizePercentage((uniquePatientsWithAppointments / trackedPatients.length) * 100)
+          : 0,
+      },
+      {
+        id: "high-risk-patients",
+        label: "Ca nguy co cao",
+        helper: "Ho so co ket qua AI nguy co cao can uu tien.",
+        countLabel: `${highRiskPatients} ho so`,
+        percent: trackedPatients.length
+          ? normalizePercentage((highRiskPatients / trackedPatients.length) * 100)
+          : 0,
+      },
+      {
+        id: "today-schedule",
+        label: "Lich hom nay",
+        helper: "Su kien trong ngay so voi tong lich lam viec hien co.",
+        countLabel: `${todaySchedules}/${scheduleEvents.length} su kien`,
+        percent: scheduleEvents.length
+          ? normalizePercentage((todaySchedules / scheduleEvents.length) * 100)
+          : 0,
+      },
+    ];
+  }, [patientWorkspace, scheduleWorkspace]);
+
+  const supportMailto = useMemo(() => {
+    const subject = `[MedAssist Support] Ho so bac si - ${profile.fullName.trim() || doctorUid}`;
+    const body = [
+      `Bac si: ${profile.fullName.trim() || doctorUid}`,
+      `Doctor UID: ${doctorUid}`,
+      `Email lien he: ${doctorEmail}`,
+      `Chuyen khoa: ${profile.specialty.trim() || "Dang cap nhat"}`,
+      "",
+      "Noi dung can ho tro:",
+      "Can ho tro ky thuat tai man hinh ho so bac si.",
+    ];
+
+    return buildSupportMailto({
+      subject,
+      body,
+    });
+  }, [doctorEmail, doctorUid, profile.fullName, profile.specialty]);
 
   const saveProfile = async (nextProfile = profile) => {
     const resolvedDisplayName =
       nextProfile.fullName.trim() ||
       auth.currentUser?.displayName?.trim() ||
-      `Bác sĩ ${doctorUid.slice(-4)}`;
-    const resolvedEmail = auth.currentUser?.email || `${doctorUid}@medassist.local`;
+      `Bac si ${doctorUid.slice(-4).toUpperCase()}`;
 
     await createUser(getMedAssistDataConnect(), {
       uid: doctorUid,
-      email: resolvedEmail,
+      email: doctorEmail,
       role: "doctor",
       displayName: resolvedDisplayName,
       status: "active",
-      phone: nextProfile.phone || auth.currentUser?.phoneNumber || null,
+      phone: nextProfile.phone.trim() || auth.currentUser?.phoneNumber || null,
       photoURL: nextProfile.avatarUrl || auth.currentUser?.photoURL || null,
       updatedAt: nowIsoString(),
       updatedBy: doctorUid,
@@ -87,13 +318,13 @@ export function DoctorProfileModel() {
     await upsertDoctorProfile(getMedAssistDataConnect(), {
       id: nextProfile.id,
       doctorUid,
-      fullName: nextProfile.fullName,
+      fullName: resolvedDisplayName,
       dob: nextProfile.dob || null,
       gender: nextProfile.gender || null,
-      phone: nextProfile.phone || null,
-      specialty: nextProfile.specialty || null,
-      certNumber: nextProfile.certNumber || null,
-      bio: nextProfile.bio || null,
+      phone: nextProfile.phone.trim() || null,
+      specialty: nextProfile.specialty.trim() || null,
+      certNumber: nextProfile.certNumber.trim() || null,
+      bio: nextProfile.bio.trim() || null,
       avatarUrl: nextProfile.avatarUrl || null,
       verificationStatus: nextProfile.verificationStatus,
       verificationDocumentName: nextProfile.verificationDocumentName || null,
@@ -106,10 +337,9 @@ export function DoctorProfileModel() {
     const refreshedDoctor = refreshed.data.doctorProfiles[0];
 
     setWorkspace(refreshed.data);
-    setProfile((current) => ({
-      ...current,
+    setProfile({
       id: refreshedDoctor?.id || nextProfile.id,
-      fullName: refreshedDoctor?.fullName || nextProfile.fullName,
+      fullName: refreshedDoctor?.fullName || resolvedDisplayName,
       dob: refreshedDoctor?.dob || nextProfile.dob || "",
       gender: refreshedDoctor?.gender || nextProfile.gender || "",
       phone: refreshedDoctor?.phone || nextProfile.phone || "",
@@ -122,48 +352,351 @@ export function DoctorProfileModel() {
         refreshedDoctor?.verificationDocumentName || nextProfile.verificationDocumentName || "",
       verificationDocumentDataUrl:
         refreshedDoctor?.verificationDocumentDataUrl || nextProfile.verificationDocumentDataUrl || "",
-    }));
+    });
 
-    window.dispatchEvent(new CustomEvent("profileUpdate", { detail: { name: resolvedDisplayName, avatar: nextProfile.avatarUrl } }));
+    window.dispatchEvent(
+      new CustomEvent("profileUpdate", {
+        detail: {
+          name: resolvedDisplayName,
+          avatar: nextProfile.avatarUrl,
+        },
+      })
+    );
   };
 
   const uploadAsset = async (file: File, target: "avatar" | "verify") => {
     const dataUrl = await readFileAsDataUrl(file);
-    const nextProfile = target === "avatar" ? { ...profile, avatarUrl: dataUrl } : { ...profile, verificationDocumentName: file.name, verificationDocumentDataUrl: dataUrl, verificationStatus: "verified" };
-    await saveProfile(nextProfile);
-    setToast(target === "avatar" ? "Đã tải lên ảnh đại diện mới." : "Đã cập nhật tài liệu xác minh.");
-  };
+    const nextProfile =
+      target === "avatar"
+        ? {
+            ...profile,
+            avatarUrl: dataUrl,
+          }
+        : {
+            ...profile,
+            verificationDocumentName: file.name,
+            verificationDocumentDataUrl: dataUrl,
+            verificationStatus: "verified",
+          };
 
-  const quickMetrics = {
-    consultations: metrics.filter((item) => item.section === "consultations"),
-    patients: metrics.filter((item) => item.section === "patients"),
-    procedures: metrics.filter((item) => item.section === "procedures"),
+    await saveProfile(nextProfile);
+    setToast(
+      target === "avatar"
+        ? "Da cap nhat anh dai dien."
+        : "Da cap nhat tai lieu xac minh."
+    );
   };
 
   return (
-    <div className="font-sans text-slate-800 w-full max-w-7xl mx-auto">
-      <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAsset(e.target.files[0], "avatar")} />
-      <input ref={verifyInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAsset(e.target.files[0], "verify")} />
+    <div className="mx-auto w-full max-w-7xl font-sans text-slate-800">
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            void uploadAsset(file, "avatar");
+          }
+        }}
+      />
+      <input
+        ref={verifyInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            void uploadAsset(file, "verify");
+          }
+        }}
+      />
 
-      <AnimatePresence>{toast ? <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 20 }} exit={{ opacity: 0, y: -20 }} className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 font-medium"><CheckCircle2 size={20} />{toast}</motion.div> : null}</AnimatePresence>
+      <AnimatePresence>
+        {toast ? (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 20 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed left-1/2 top-6 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-medium text-white shadow-lg"
+          >
+            <CheckCircle2 size={20} />
+            {toast}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      <header className="flex justify-between items-center mb-8"><div><h1 className="text-3xl font-bold text-slate-800">Hồ sơ bác sĩ</h1><p className="text-slate-500 mt-1">Quản lý thông tin cá nhân và chứng chỉ hành nghề</p></div><motion.button onClick={() => router.push("/dashboard/settings")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium shadow-sm hover:bg-slate-50"><Settings size={16} /> Cài đặt</motion.button></header>
+      <header className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Ho so bac si</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Quan ly thong tin ca nhan, xac minh va hoat dong chuyen mon.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-10">
-        <div className="xl:col-span-2 space-y-8">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6"><div className="flex items-center gap-6"><div className="relative">{profile.avatarUrl ? <img src={profile.avatarUrl} alt="Avatar" className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md" /> : <div className="w-28 h-28 rounded-full bg-slate-100 border-4 border-white shadow-md flex items-center justify-center text-slate-400"><Camera size={32} /></div>}<button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-md border border-slate-100 text-slate-600 hover:text-[#638BB5]"><Camera size={16} /></button></div><div><h2 className="text-2xl font-bold text-slate-800">{profile.fullName || "Chưa cập nhật"}</h2><p className="text-[#638BB5] flex items-center gap-1.5 mt-1.5 font-medium"><Building2 size={16} /> {profile.specialty || "Chưa cập nhật"}</p><div className="flex flex-wrap gap-3 mt-5"><button type="button" onClick={() => avatarInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-[#638BB5] text-white rounded-lg text-sm font-medium shadow-sm hover:bg-[#527a9f]"><Upload size={16} /> Thay đổi ảnh đại diện</button><button type="button" onClick={async () => { await saveProfile({ ...profile, avatarUrl: "" }); setToast("Đã gỡ ảnh đại diện"); }} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">Gỡ ảnh</button></div></div></div>{isEditing ? <button type="button" onClick={async () => { await saveProfile(); setIsEditing(false); setToast("Đã lưu thông tin thành công!"); }} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium shadow-sm hover:bg-emerald-700"><Save size={16} /> Lưu thay đổi</button> : <button type="button" onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-5 py-2.5 bg-[#638BB5] text-white rounded-xl text-sm font-medium shadow-sm hover:bg-[#527a9f]"><Edit3 size={16} /> Chỉnh sửa hồ sơ</button>}</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8 mt-10"><FormField label="HỌ VÀ TÊN" name="fullName" value={profile.fullName} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><FormField label="NGÀY SINH" name="dob" value={profile.dob} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><FormField label="GIỚI TÍNH" name="gender" value={profile.gender} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><FormField label="SỐ ĐIỆN THOẠI" name="phone" value={profile.phone} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><FormField label="CHUYÊN KHOA" name="specialty" value={profile.specialty} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><FormField label="SỐ CHỨNG CHỈ HÀNH NGHỀ" name="certNumber" value={profile.certNumber} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /><div className="sm:col-span-2"><FormField label="TIỂU SỬ" name="bio" value={profile.bio} isEditing={isEditing} onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))} /></div></div>
-          </div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/dashboard/settings")}
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <Settings size={16} />
+          Cai dat
+        </motion.button>
+      </header>
 
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"><h3 className="text-xl font-bold text-slate-800 flex items-center gap-2.5 mb-6"><ShieldCheck className="text-[#638BB5]" size={24} /> Chứng chỉ & Xác minh</h3><div className="bg-[#F8FAFC] rounded-2xl p-6 border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"><div className="flex items-start gap-6"><div className="w-16 h-16 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-[#638BB5] shadow-sm flex-shrink-0"><FileBadge size={32} /></div><div><h4 className="font-bold text-slate-800 text-lg">Chứng chỉ hành nghề Y</h4><p className="text-slate-500 text-sm mt-1.5 max-w-md leading-relaxed">{profile.verificationDocumentName || "Tải lên hoặc quét bản sao chứng chỉ hành nghề để duy trì trạng thái xác minh tài khoản của bạn."}</p><div className="flex flex-wrap gap-3 mt-5"><button type="button" onClick={() => verifyInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-[#638BB5] text-white rounded-lg text-sm font-medium shadow-sm hover:bg-[#527a9f]"><UploadCloud size={16} /> Tải lên minh chứng</button><button type="button" onClick={() => verifyInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50"><Scan size={16} /> Quét tài liệu</button></div></div></div><div className="text-center sm:text-right w-full sm:w-auto mt-4 sm:mt-0"><div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Trạng thái</div><div className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold text-sm whitespace-nowrap bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100"><CheckCircle2 size={16} /> {profile.verificationStatus}</div></div></div></div>
+      <div className="grid grid-cols-1 gap-8 pb-10 xl:grid-cols-3">
+        <div className="space-y-8 xl:col-span-2">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  {profile.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt="Avatar"
+                      className="h-28 w-28 rounded-full border-4 border-white object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white bg-slate-100 text-slate-400 shadow-md">
+                      <Camera size={32} />
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute bottom-1 right-1 rounded-full border border-slate-100 bg-white p-2 text-slate-600 shadow-md hover:text-[#638BB5]"
+                  >
+                    <Camera size={16} />
+                  </button>
+                </div>
+
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">
+                    {profile.fullName || "Chua cap nhat"}
+                  </h2>
+                  <p className="mt-1.5 flex items-center gap-1.5 font-medium text-[#638BB5]">
+                    <Building2 size={16} />
+                    {profile.specialty || "Chua cap nhat"}
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="flex items-center gap-2 rounded-lg bg-[#638BB5] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#527a9f]"
+                    >
+                      <Upload size={16} />
+                      Thay doi anh dai dien
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await saveProfile({ ...profile, avatarUrl: "" });
+                        setToast("Da go anh dai dien.");
+                      }}
+                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Go anh
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {isEditing ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await saveProfile();
+                    setIsEditing(false);
+                    setToast("Da luu thong tin thanh cong.");
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                >
+                  <Save size={16} />
+                  Luu thay doi
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 rounded-xl bg-[#638BB5] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#527a9f]"
+                >
+                  <Edit3 size={16} />
+                  Chinh sua ho so
+                </button>
+              )}
+            </div>
+
+            <div className="mt-10 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2">
+              <FormField
+                label="Ho va ten"
+                name="fullName"
+                value={profile.fullName}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <FormField
+                label="Ngay sinh"
+                name="dob"
+                value={profile.dob}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <FormField
+                label="Gioi tinh"
+                name="gender"
+                value={profile.gender}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <FormField
+                label="So dien thoai"
+                name="phone"
+                value={profile.phone}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <FormField
+                label="Chuyen khoa"
+                name="specialty"
+                value={profile.specialty}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <FormField
+                label="So chung chi hanh nghe"
+                name="certNumber"
+                value={profile.certNumber}
+                isEditing={isEditing}
+                onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+              />
+              <div className="sm:col-span-2">
+                <FormField
+                  label="Tieu su"
+                  name="bio"
+                  value={profile.bio}
+                  isEditing={isEditing}
+                  multiline
+                  onChange={(name, value) => setProfile((current) => ({ ...current, [name]: value }))}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h3 className="mb-6 flex items-center gap-2.5 text-xl font-bold text-slate-800">
+              <ShieldCheck className="text-[#638BB5]" size={24} />
+              Chung chi va xac minh
+            </h3>
+
+            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-slate-100 bg-[#F8FAFC] p-6 sm:flex-row sm:items-center">
+              <div className="flex items-start gap-6">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#638BB5] shadow-sm">
+                  <FileBadge size={32} />
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-bold text-slate-800">Chung chi hanh nghe Y</h4>
+                  <p className="mt-1.5 max-w-md text-sm leading-relaxed text-slate-500">
+                    {profile.verificationDocumentName ||
+                      "Tai len hoac quet ban sao chung chi hanh nghe de duy tri trang thai xac minh tai khoan cua ban."}
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => verifyInputRef.current?.click()}
+                      className="flex items-center gap-2 rounded-lg bg-[#638BB5] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#527a9f]"
+                    >
+                      <UploadCloud size={16} />
+                      Tai len minh chung
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => verifyInputRef.current?.click()}
+                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <Scan size={16} />
+                      Quet tai lieu
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 w-full text-center sm:mt-0 sm:w-auto sm:text-right">
+                <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Trang thai
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold whitespace-nowrap text-emerald-600">
+                  <CheckCircle2 size={16} />
+                  {profile.verificationStatus || doctorProfile?.verificationStatus || "verified"}
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"><div className="flex justify-between items-start mb-8"><h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="text-[#638BB5]" size={20} /> Thống kê hoạt động</h3></div><div className="space-y-5">{[...quickMetrics.consultations, ...quickMetrics.patients, ...quickMetrics.procedures].map((metric) => <div key={metric.id}><div className="flex justify-between text-xs font-semibold mb-2"><span className="text-slate-600">{metric.label}</span><span className="text-slate-900">{metric.countLabel || metric.valueText || metric.valueNumber}</span></div><div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-[#638BB5] rounded-full" style={{ width: `${metric.valueNumber || 0}%` }} /></div></div>)}</div></div>
-          <div className="bg-gradient-to-br from-[#638BB5] to-[#4A6F94] rounded-3xl p-8 text-white relative overflow-hidden shadow-md"><Headphones className="absolute -bottom-6 -right-6 w-40 h-40 text-white opacity-10" /><h3 className="text-xl font-bold mb-3 relative z-10">Hỗ trợ kỹ thuật</h3><p className="text-blue-100 text-sm mb-8 relative z-10 max-w-[85%] leading-relaxed">Bạn gặp khó khăn khi cập nhật hồ sơ? Liên hệ với chúng tôi ngay.</p><button type="button" onClick={() => createSupportRequest(getMedAssistDataConnect(), { doctorUid, source: "doctor-profile", message: "Cần hỗ trợ kỹ thuật tại màn hình hồ sơ bác sĩ.", createdAt: nowIsoString() }).then(() => setToast("Đã gửi yêu cầu hỗ trợ")).catch(() => setToast("Không thể gửi yêu cầu hỗ trợ"))} className="text-sm font-medium text-white/90 hover:text-white flex items-center gap-1 relative z-10 underline underline-offset-4 decoration-white/30 hover:decoration-white">Gửi yêu cầu hỗ trợ</button></div>
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                <TrendingUp className="text-[#638BB5]" size={20} />
+                Thong ke hoat dong
+              </h3>
+              <p className="mt-2 text-sm text-slate-500">
+                Chi so duoc tinh truc tiep tu ho so benh nhan, lich kham va lich lam viec hien co.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {activityMetrics.map((metric) => (
+                <div key={metric.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{metric.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{metric.helper}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-slate-900">{metric.countLabel}</p>
+                      <p className="mt-1 text-xs font-medium text-slate-400">{metric.percent}%</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-[#638BB5]"
+                      style={{ width: `${metric.percent}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#638BB5] to-[#4A6F94] p-8 text-white shadow-md">
+            <Headphones className="absolute -bottom-6 -right-6 h-40 w-40 opacity-10" />
+            <h3 className="relative z-10 mb-3 text-xl font-bold">Ho tro ky thuat</h3>
+            <p className="relative z-10 mb-8 max-w-[85%] text-sm leading-relaxed text-blue-100">
+              Ban gap kho khan khi cap nhat ho so? He thong se mo ung dung email de gui yeu cau ho tro.
+            </p>
+            <a
+              href={supportMailto}
+              onClick={() => setToast("Dang mo ung dung email...")}
+              className="relative z-10 inline-flex items-center gap-1 text-sm font-medium text-white/90 underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+            >
+              Gui yeu cau ho tro
+            </a>
+          </section>
         </div>
       </div>
+
+      {isLoading ? (
+        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-sm font-medium text-slate-500 shadow-sm">
+          Dang dong bo du lieu ho so bac si...
+        </div>
+      ) : null}
     </div>
   );
 }

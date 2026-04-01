@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { AdminAiDiagnosisWorkspace } from "@/features/admin/components/AdminAiDiagnosisWorkspace";
+import { RoleBasedDashboardView } from "@/features/admin/components/RoleBasedDashboardView";
 import { AiDiagnosisWorkspace } from "@/features/ai-diagnosis/components/AiDiagnosisWorkspace";
 
 export const metadata: Metadata = {
@@ -7,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function AiDiagnosisPage() {
-  return <AiDiagnosisWorkspace />;
+  return (
+    <RoleBasedDashboardView
+      admin={<AdminAiDiagnosisWorkspace />}
+      doctor={<AiDiagnosisWorkspace />}
+    />
+  );
 }

@@ -7,17 +7,26 @@ const connectorConfig = {
 };
 exports.connectorConfig = connectorConfig;
 
-const validateArgsWithOptions = (connectorConfig, dcOrVarsOrOptions, varsOrOptions, options, hasVars, validateVars) => {
-  const hasExplicitDc = dcOrVarsOrOptions && 'enableEmulator' in dcOrVarsOrOptions;
-  const inputVars = hasVars ? (hasExplicitDc ? varsOrOptions : dcOrVarsOrOptions) : undefined;
-  const inputOptions = hasExplicitDc ? (hasVars ? options : varsOrOptions) : (hasVars ? varsOrOptions : dcOrVarsOrOptions);
-  const parsedArgs = hasExplicitDc
-    ? validateArgs(connectorConfig, dcOrVarsOrOptions, inputVars, validateVars)
-    : validateArgs(connectorConfig, inputVars, undefined, validateVars);
+const isDataConnectInstance = (value) => Boolean(value) && typeof value === 'object' && 'enableEmulator' in value;
+const isExecuteQueryOptions = (value) => Boolean(value) && typeof value === 'object' && 'fetchPolicy' in value;
+
+const validateArgsWithOptions = (connectorConfig, dcOrVars, varsOrOptions, options, validateVars) => {
+  const parsedArgs = validateArgs(
+    connectorConfig,
+    validateVars
+      ? dcOrVars
+      : isDataConnectInstance(dcOrVars)
+        ? dcOrVars
+        : undefined,
+    validateVars && isExecuteQueryOptions(varsOrOptions) ? undefined : varsOrOptions,
+    validateVars
+  );
 
   return {
     ...parsedArgs,
-    options: inputOptions
+    options: validateVars
+      ? (isExecuteQueryOptions(varsOrOptions) ? varsOrOptions : options)
+      : (isExecuteQueryOptions(dcOrVars) ? dcOrVars : options),
   };
 };
 
@@ -662,7 +671,7 @@ exports.getAllUsersRef = getAllUsersRef;
 exports.getAllUsers = function getAllUsers(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getAllUsersRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getAllUsersRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -677,7 +686,7 @@ exports.getDoctorsRef = getDoctorsRef;
 exports.getDoctors = function getDoctors(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getDoctorsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getDoctorsRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -692,7 +701,7 @@ exports.getPatientsByDoctorRef = getPatientsByDoctorRef;
 exports.getPatientsByDoctor = function getPatientsByDoctor(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getPatientsByDoctorRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getPatientsByDoctorRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -707,7 +716,7 @@ exports.getAppointmentsRef = getAppointmentsRef;
 exports.getAppointments = function getAppointments(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getAppointmentsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getAppointmentsRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -722,7 +731,7 @@ exports.getAiDiagnosesRef = getAiDiagnosesRef;
 exports.getAiDiagnoses = function getAiDiagnoses(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getAiDiagnosesRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getAiDiagnosesRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1073,7 +1082,7 @@ exports.getLandingWorkspaceRef = getLandingWorkspaceRef;
 exports.getLandingWorkspace = function getLandingWorkspace(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getLandingWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getLandingWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1088,7 +1097,7 @@ exports.getZaloContactsRef = getZaloContactsRef;
 exports.getZaloContacts = function getZaloContacts(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getZaloContactsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getZaloContactsRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1103,7 +1112,7 @@ exports.getDashboardHomeWorkspaceRef = getDashboardHomeWorkspaceRef;
 exports.getDashboardHomeWorkspace = function getDashboardHomeWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getDashboardHomeWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getDashboardHomeWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1118,7 +1127,7 @@ exports.getPatientWorkspaceRef = getPatientWorkspaceRef;
 exports.getPatientWorkspace = function getPatientWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getPatientWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getPatientWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1133,7 +1142,7 @@ exports.getScheduleWorkspaceRef = getScheduleWorkspaceRef;
 exports.getScheduleWorkspace = function getScheduleWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getScheduleWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getScheduleWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1148,7 +1157,7 @@ exports.getConsultationWorkspaceRef = getConsultationWorkspaceRef;
 exports.getConsultationWorkspace = function getConsultationWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getConsultationWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getConsultationWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1163,7 +1172,7 @@ exports.getAiDiagnosisWorkspaceRef = getAiDiagnosisWorkspaceRef;
 exports.getAiDiagnosisWorkspace = function getAiDiagnosisWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getAiDiagnosisWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getAiDiagnosisWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1178,7 +1187,7 @@ exports.getPharmacyWorkspaceRef = getPharmacyWorkspaceRef;
 exports.getPharmacyWorkspace = function getPharmacyWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getPharmacyWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getPharmacyWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1193,7 +1202,7 @@ exports.getReportsWorkspaceRef = getReportsWorkspaceRef;
 exports.getReportsWorkspace = function getReportsWorkspace(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getReportsWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getReportsWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1208,7 +1217,7 @@ exports.getDoctorProfileWorkspaceRef = getDoctorProfileWorkspaceRef;
 exports.getDoctorProfileWorkspace = function getDoctorProfileWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getDoctorProfileWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getDoctorProfileWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1223,7 +1232,7 @@ exports.getSettingsWorkspaceRef = getSettingsWorkspaceRef;
 exports.getSettingsWorkspace = function getSettingsWorkspace(dcOrVars, varsOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
-  return executeQuery(getSettingsWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getSettingsWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
 
@@ -1238,6 +1247,7 @@ exports.getRecordDigitizationWorkspaceRef = getRecordDigitizationWorkspaceRef;
 exports.getRecordDigitizationWorkspace = function getRecordDigitizationWorkspace(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
-  return executeQuery(getRecordDigitizationWorkspaceRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+  return executeQuery(getRecordDigitizationWorkspaceRef(dcInstance, inputVars), inputOpts);
 }
 ;
+

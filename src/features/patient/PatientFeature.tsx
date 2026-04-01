@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Filter, Grid, List, Search, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Grid, List, Search, UserPlus } from "lucide-react";
 import {
   createPatientProfile,
   createUser,
@@ -25,6 +25,7 @@ import { PatientCreateModal, type PatientCreateValues } from "./components/Patie
 import { PatientGridCard, type PatientData } from "./components/PatientGridCard";
 
 type PatientWorkspaceData = GetPatientWorkspaceData;
+const PATIENTS_PER_PAGE = 10;
 
 function parseOptionalNumber(value: string) {
   const normalized = value.trim();
@@ -117,6 +118,7 @@ export const PatientFeature = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [patients, setPatients] = useState<PatientData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -167,6 +169,39 @@ export const PatientFeature = () => {
       return matchesSearch && matchesUrgent;
     });
   }, [patients, searchTerm, showUrgentOnly]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, showUrgentOnly]);
+
+  const pageCount = useMemo(
+    () => Math.max(1, Math.ceil(filteredPatients.length / PATIENTS_PER_PAGE)),
+    [filteredPatients.length]
+  );
+
+  useEffect(() => {
+    if (currentPage > pageCount) {
+      setCurrentPage(pageCount);
+    }
+  }, [currentPage, pageCount]);
+
+  const pagedPatients = useMemo(() => {
+    const safePage = Math.min(Math.max(currentPage, 1), pageCount);
+    const startIndex = (safePage - 1) * PATIENTS_PER_PAGE;
+    return filteredPatients.slice(startIndex, startIndex + PATIENTS_PER_PAGE);
+  }, [currentPage, filteredPatients, pageCount]);
+
+  const pageSummary = useMemo(() => {
+    const safePage = Math.min(Math.max(currentPage, 1), pageCount);
+    const startItem = filteredPatients.length === 0 ? 0 : (safePage - 1) * PATIENTS_PER_PAGE + 1;
+    const endItem = Math.min(safePage * PATIENTS_PER_PAGE, filteredPatients.length);
+
+    return {
+      page: safePage,
+      startItem,
+      endItem,
+    };
+  }, [currentPage, filteredPatients.length, pageCount]);
 
   const handleOpenPatient = (patient: PatientData) => {
     router.push(`/dashboard/patient/${patient.userUid}`);
@@ -330,9 +365,15 @@ export const PatientFeature = () => {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredPatients.map((patient) => (
-            <PatientGridCard key={patient.id} patient={patient} onOpen={handleOpenPatient} />
-          ))}
+          {pagedPatients.length ? (
+            pagedPatients.map((patient) => (
+              <PatientGridCard key={patient.id} patient={patient} onOpen={handleOpenPatient} />
+            ))
+          ) : (
+            <div className="col-span-full rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-sm font-medium text-slate-500 shadow-sm">
+              Khong tim thay ho so phu hop.
+            </div>
+          )}
         </div>
       ) : (
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
@@ -351,7 +392,8 @@ export const PatientFeature = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredPatients.map((patient) => (
+                {pagedPatients.length ? (
+                  pagedPatients.map((patient) => (
                   <tr
                     key={patient.id}
                     className="cursor-pointer transition-colors hover:bg-slate-50/80"
@@ -388,12 +430,52 @@ export const PatientFeature = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-14 text-center text-sm font-medium text-slate-500">
+                      Khong tim thay ho so phu hop.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
+
+      {!isLoading ? (
+        <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-slate-500">
+            {filteredPatients.length === 0
+              ? "0 ho so"
+              : `${pageSummary.startItem}-${pageSummary.endItem} / ${filteredPatients.length} ho so | ${PATIENTS_PER_PAGE} ho so/trang`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+              disabled={pageSummary.page <= 1}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Trang truoc"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">
+              Trang {pageSummary.page}/{pageCount}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(page + 1, pageCount))}
+              disabled={pageSummary.page >= pageCount}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Trang sau"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="fixed bottom-6 right-6 z-50">
         <button className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-[#35678E] to-[#8BB4DC] text-white shadow-lg shadow-[#35678E]/30 transition-transform hover:scale-105 hover:opacity-90">

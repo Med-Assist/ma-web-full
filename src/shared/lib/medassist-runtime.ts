@@ -63,6 +63,11 @@ export function getActiveDoctorUid() {
   return DEFAULT_DOCTOR_UID;
 }
 
+export function buildDoctorNoticeThreadKey(doctorUid?: string | null) {
+  const normalized = (doctorUid || getActiveDoctorUid()).trim();
+  return `doctor-notice:${normalized || DEFAULT_DOCTOR_UID}`;
+}
+
 export function createClientId(prefix: string) {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `${prefix}-${crypto.randomUUID()}`;

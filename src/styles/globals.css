@@ -2,13 +2,33 @@
 @source "../features";
 @source "../shared";
 
+:root {
+  --app-font: "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
 html {
   scroll-behavior: smooth;
+  font-family: var(--app-font);
 }
 
 body {
   background-color: #0b1121;
   overflow-x: hidden;
+  font-family: var(--app-font);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.font-sans {
+  font-family: var(--app-font) !important;
 }
 
 .custom-light-table .ant-table-thead > tr > th {

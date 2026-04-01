@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Activity, ArrowLeft, ArrowRight, Eye, FileText, Stethoscope, type LucideIcon } from "lucide-react";
 import "@/styles/landing.scss";
-import { useLandingWorkspace } from "../lib/useLandingWorkspace";
+import { ARTICLES } from "../constants/articles";
 
 const iconMap = {
   stethoscope: Stethoscope,
@@ -23,27 +23,20 @@ type NewsArticle = {
   icon: LucideIcon;
 };
 
+const LANDING_ARTICLES: NewsArticle[] = ARTICLES.map((article) => ({
+  id: article.id,
+  title: article.title,
+  excerpt: article.excerpt,
+  content: article.content,
+  link: article.link || undefined,
+  image: article.image,
+  icon: iconMap[article.icon as keyof typeof iconMap] ?? Activity,
+}));
+
 export const NewsSection = () => {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [activeArticle, setActiveArticle] = useState<NewsArticle | null>(null);
-  const { data } = useLandingWorkspace();
-
-  const articles = useMemo<NewsArticle[]>(
-    () =>
-      data.landingArticles
-        .slice()
-        .sort((left, right) => left.displayOrder - right.displayOrder)
-        .map((article) => ({
-          id: article.id,
-          title: article.title,
-          excerpt: article.excerpt,
-          content: article.content,
-          link: article.link || undefined,
-          image: article.imagePath,
-          icon: iconMap[article.iconKey as keyof typeof iconMap] ?? Activity,
-        })),
-    [data]
-  );
+  const articles = useMemo<NewsArticle[]>(() => LANDING_ARTICLES, []);
 
   const handleOpenArticle = (article: NewsArticle) => {
     setActiveArticle(article);

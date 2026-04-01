@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Activity, ArrowRight, FileText, Mail, MapPin, Phone, Stethoscope, User } from "lucide-react";
 import "@/styles/landing.scss";
 import { useLandingWorkspace } from "../lib/useLandingWorkspace";
+import { buildSupportMailto, SUPPORT_EMAIL } from "@/shared/lib/support";
 
 type ContactFormState = {
   name: string;
@@ -14,7 +15,6 @@ type ContactFormState = {
 };
 
 export const ContactSection = () => {
-  const supportEmail = "nguyenthanhdanhctk42@gmail.com";
   const { data } = useLandingWorkspace();
   const support = data.supportContactInfos[0];
   const [form, setForm] = useState<ContactFormState>({
@@ -58,7 +58,10 @@ export const ContactSection = () => {
       form.message.trim(),
     ].join("\n");
 
-    window.location.href = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = buildSupportMailto({
+      subject,
+      body,
+    });
 
     setForm({
       name: "",
@@ -100,8 +103,8 @@ export const ContactSection = () => {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-[#0B1121] text-cyan-400">
                     <Mail className="h-5 w-5" />
                   </div>
-                    <a href={`mailto:${supportEmail}`} className="font-medium text-white hover:text-cyan-400 transition-colors">
-                      {supportEmail}
+                    <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-white hover:text-cyan-400 transition-colors">
+                      {SUPPORT_EMAIL}
                     </a>
                   </div>
                   <div className="flex items-center gap-4">

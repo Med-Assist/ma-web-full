@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
 export type PatientCreateValues = {
@@ -47,12 +47,11 @@ export function PatientCreateModal({
   onSubmit: (values: PatientCreateValues) => Promise<void>;
 }) {
   const [values, setValues] = useState<PatientCreateValues>(defaultValues);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setValues(defaultValues);
-    }
-  }, [isOpen]);
+  const resetValues = () => setValues(defaultValues);
+  const handleClose = () => {
+    resetValues();
+    onClose();
+  };
 
   if (!isOpen) {
     return null;
@@ -65,6 +64,7 @@ export function PatientCreateModal({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSubmit(values);
+    resetValues();
   };
 
   return (
@@ -77,7 +77,7 @@ export function PatientCreateModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
@@ -255,7 +255,7 @@ export function PatientCreateModal({
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
             >
               Hủy

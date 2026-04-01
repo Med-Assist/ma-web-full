@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { AdminPatientDetailWorkspace } from "@/features/admin/components/AdminPatientDetailWorkspace";
+import { RoleBasedDashboardView } from "@/features/admin/components/RoleBasedDashboardView";
 import { PatientDetailWorkspace } from "@/features/patient/components/PatientDetailWorkspace";
 
 export const metadata: Metadata = {
@@ -13,5 +15,10 @@ export default async function PatientDetailPage({
 }) {
   const { patientUid } = await params;
 
-  return <PatientDetailWorkspace patientUid={patientUid} />;
+  return (
+    <RoleBasedDashboardView
+      admin={<AdminPatientDetailWorkspace patientUid={patientUid} />}
+      doctor={<PatientDetailWorkspace patientUid={patientUid} />}
+    />
+  );
 }

@@ -16,6 +16,20 @@ type GeminiInlineDataPart = {
 
 type GeminiPart = GeminiTextPart | GeminiInlineDataPart;
 
+type GeminiResponseTextPart = {
+  text?: string | null;
+};
+
+type GeminiResponseCandidate = {
+  content?: {
+    parts?: GeminiResponseTextPart[] | null;
+  } | null;
+};
+
+type GeminiGenerateContentResponse = {
+  candidates?: GeminiResponseCandidate[] | null;
+};
+
 type DashboardChatContext = {
   activePatientName?: string | null;
   activeSymptoms?: string | null;
@@ -42,7 +56,7 @@ type RetinaAnalysisResult = {
 };
 
 type GeminiResponsePayload = {
-  response: any;
+  response: GeminiGenerateContentResponse;
   model: string;
 };
 
@@ -148,16 +162,14 @@ async function createGeminiResponse({
   }
 
   return {
-    response: await response.json(),
+    response: (await response.json()) as GeminiGenerateContentResponse,
     model,
   };
 }
 
-function extractOutputText(response: any) {
+function extractOutputText(response: GeminiGenerateContentResponse) {
   const parts =
-    response?.candidates?.flatMap((candidate: any) => candidate?.content?.parts ?? [])?.map(
-      (part: any) => part?.text
-    ) ?? [];
+    response.candidates?.flatMap((candidate) => candidate.content?.parts ?? []).map((part) => part.text) ?? [];
 
   return parts
     .filter((value: unknown) => typeof value === "string" && value.trim())

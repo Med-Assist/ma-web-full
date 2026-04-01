@@ -100,6 +100,7 @@ function toCompactNumber(value: number) {
 
 export function ReportsWorkspace() {
   const [workspace, setWorkspace] = useState<GetDashboardHomeWorkspaceData | null>(null);
+  const [workspaceLoadedAt, setWorkspaceLoadedAt] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -109,6 +110,7 @@ export function ReportsWorkspace() {
       .then((response) => {
         if (mounted) {
           setWorkspace(response.data);
+          setWorkspaceLoadedAt(Date.now());
         }
       })
       .catch((error) => console.error("Khong the tai workspace bao cao:", error));
@@ -119,11 +121,11 @@ export function ReportsWorkspace() {
   }, []);
 
   const summaryCards = useMemo<SummaryCard[]>(() => {
-    if (!workspace) {
+    if (!workspace || workspaceLoadedAt === null) {
       return [];
     }
 
-    const now = Date.now();
+    const now = workspaceLoadedAt;
     const upcomingSoon = workspace.appointments.filter((appointment) => {
       const appointmentTime = new Date(appointment.scheduledAt).getTime();
       return (
@@ -182,7 +184,7 @@ export function ReportsWorkspace() {
         iconKey: "pill",
       },
     ];
-  }, [workspace]);
+  }, [workspace, workspaceLoadedAt]);
 
   const stageBars = useMemo<StageBar[]>(() => {
     if (!workspace) {
@@ -203,11 +205,11 @@ export function ReportsWorkspace() {
   }, [workspace]);
 
   const linePoints = useMemo<TrendPoint[]>(() => {
-    if (!workspace) {
+    if (!workspace || workspaceLoadedAt === null) {
       return [];
     }
 
-    const today = new Date();
+    const today = new Date(workspaceLoadedAt);
     today.setHours(0, 0, 0, 0);
 
     const last7Days = Array.from({ length: 7 }, (_, index) => {
@@ -245,7 +247,7 @@ export function ReportsWorkspace() {
         y,
       };
     });
-  }, [workspace]);
+  }, [workspace, workspaceLoadedAt]);
 
   const alertPatients = useMemo<AlertPatient[]>(() => {
     if (!workspace) {

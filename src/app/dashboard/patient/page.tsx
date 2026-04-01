@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { AdminPatientWorkspace } from "@/features/admin/components/AdminPatientWorkspace";
+import { RoleBasedDashboardView } from "@/features/admin/components/RoleBasedDashboardView";
 import { PatientFeature } from "@/features/patient/PatientFeature";
 
 export const metadata: Metadata = {
@@ -7,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function PatientPage() {
-  return <PatientFeature />;
+  return (
+    <RoleBasedDashboardView
+      admin={<AdminPatientWorkspace />}
+      doctor={<PatientFeature />}
+    />
+  );
 }
